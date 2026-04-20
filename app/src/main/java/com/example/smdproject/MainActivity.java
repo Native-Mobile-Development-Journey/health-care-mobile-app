@@ -1,5 +1,6 @@
-package com.example.smdproject;
+package com.project.healthcare;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
@@ -11,12 +12,14 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
-import com.example.smdproject.fragments.DoctorDetailFragment;
-import com.example.smdproject.fragments.HomeFragment;
-import com.example.smdproject.fragments.MessageFragment;
-import com.example.smdproject.fragments.ScheduleFragment;
-import com.example.smdproject.fragments.SettingFragment;
+import com.project.healthcare.auth.AuthActivity;
+import com.project.healthcare.fragments.DoctorDetailFragment;
+import com.project.healthcare.fragments.HomeFragment;
+import com.project.healthcare.fragments.MessageFragment;
+import com.project.healthcare.fragments.ScheduleFragment;
+import com.project.healthcare.fragments.SettingFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,6 +42,18 @@ public class MainActivity extends AppCompatActivity {
             bottomNavigationView.setSelectedItemId(R.id.nav_home);
         } else {
             syncBottomNavigationVisibility();
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            Intent intent = new Intent(this, AuthActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
         }
     }
 

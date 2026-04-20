@@ -73,6 +73,34 @@
     <string name="message_placeholder">Message screen (coming soon)</string>
     <string name="setting_placeholder">Setting screen (coming soon)</string>
 
+    <string name="auth_login_title">Welcome back</string>
+    <string name="auth_login_subtitle">Sign in to continue your healthcare journey</string>
+    <string name="auth_signup_title">Create account</string>
+    <string name="auth_signup_subtitle">Sign up to book and manage appointments</string>
+    <string name="auth_name_label">Full name</string>
+    <string name="auth_name_hint">Enter your full name</string>
+    <string name="auth_email_label">Email</string>
+    <string name="auth_email_hint">Enter your email</string>
+    <string name="auth_password_label">Password</string>
+    <string name="auth_password_hint">Enter your password</string>
+    <string name="auth_confirm_password_label">Confirm password</string>
+    <string name="auth_confirm_password_hint">Confirm your password</string>
+    <string name="auth_login_action">Login</string>
+    <string name="auth_signup_action">Sign up</string>
+    <string name="auth_no_account">Don\'t have an account? Sign up</string>
+    <string name="auth_have_account">Already have an account? Login</string>
+    <string name="auth_sign_out">Sign out</string>
+    <string name="auth_login_success">Logged in successfully</string>
+    <string name="auth_signup_success">Account created successfully</string>
+    <string name="auth_error_generic">Something went wrong. Please try again.</string>
+    <string name="auth_error_name_required">Name is required.</string>
+    <string name="auth_error_email_required">Email is required.</string>
+    <string name="auth_error_email_invalid">Enter a valid email.</string>
+    <string name="auth_error_password_required">Password is required.</string>
+    <string name="auth_error_password_min">Password must be at least 6 characters.</string>
+    <string name="auth_error_confirm_password_required">Confirm your password.</string>
+    <string name="auth_error_confirm_password_mismatch">Passwords do not match.</string>
+
     <string name="content_search">Search</string>
     <string name="content_notification">Notifications</string>
     <string name="content_back">Back</string>

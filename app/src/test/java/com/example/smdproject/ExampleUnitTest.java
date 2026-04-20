@@ -1,4 +1,4 @@
-package com.example.smdproject;
+package com.project.healthcare;
 
 import org.junit.Test;
 

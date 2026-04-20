@@ -1,4 +1,4 @@
-package com.example.smdproject.fragments;
+package com.project.healthcare.fragments;
 
 import android.os.Bundle;
 import android.view.View;
@@ -7,7 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.smdproject.R;
+import com.project.healthcare.R;
 
 public class DoctorDetailFragment extends Fragment {
 

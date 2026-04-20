@@ -8,15 +8,41 @@
     android:padding="@dimen/space_24"
     tools:context=".fragments.SettingFragment">
 
-    <TextView
-        android:id="@+id/text_setting_placeholder"
-        style="@style/Text.SMD.LabelMedium14"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/setting_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="@string/setting_placeholder"
+        android:background="@drawable/bg_stat_item"
+        android:orientation="vertical"
+        android:padding="@dimen/space_16"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/text_setting_placeholder"
+            style="@style/Text.SMD.DisplaySemibold18"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/nav_setting" />
+
+        <TextView
+            android:id="@+id/text_setting_subtitle"
+            style="@style/Text.SMD.Regular14"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:text="@string/setting_placeholder"
+            android:textColor="@color/neutral_500" />
+
+        <Button
+            android:id="@+id/button_sign_out"
+            style="@style/Widget.SMD.ButtonPrimary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            android:text="@string/auth_sign_out" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
