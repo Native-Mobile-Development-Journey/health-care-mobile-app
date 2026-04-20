@@ -1,0 +1,53 @@
+# --- IDE / Editor ---
+*.iml
+/.idea/
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+
+# --- Gradle / Build outputs ---
+.gradle/
+/build/
+**/build/
+/.kotlin/
+
+# --- Android Studio / local machine config ---
+local.properties
+/local.properties
+
+# --- NDK / native build ---
+.externalNativeBuild/
+.cxx/
+
+# --- Android packaging / generated artifacts ---
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.hprof
+
+# --- Logs / profiling ---
+*.log
+captures/
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Keystores / secrets (do not commit) ---
+*.jks
+*.keystore
+keystore.properties
+google-services.json
+app/google-services.json
+*.pem
+
+# --- Fastlane / release automation (optional) ---
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/

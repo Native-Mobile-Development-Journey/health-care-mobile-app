@@ -1,0 +1,80 @@
+<resources>
+    <string name="app_name">Healthcare</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_schedule">Schedule</string>
+    <string name="nav_message">Message</string>
+    <string name="nav_setting">Setting</string>
+
+    <string name="welcome_back">Welcome Back</string>
+    <string name="user_name">Jacob Jones</string>
+
+    <string name="service_emergency">Emergency</string>
+    <string name="service_hospital">Hospital</string>
+    <string name="service_blood">Blood</string>
+    <string name="service_prescription">Prescription</string>
+    <string name="service_doctor">Doctor</string>
+    <string name="service_checkup">Check Up</string>
+    <string name="service_location">Location</string>
+    <string name="service_radiology">Radiology</string>
+
+    <string name="find_doctor">Find doctor</string>
+    <string name="find_schedule">Find schedule</string>
+
+    <string name="schedule_today">Schedule today</string>
+    <string name="doctors_recommendation">Doctor\'s recommendation</string>
+    <string name="see_more">See more</string>
+
+    <string name="hospital_cengkareng">Cengkareng Hospital</string>
+    <string name="doctor_zubaidah">dr. Zubaidah</string>
+    <string name="doctor_claire">drg. Claire</string>
+    <string name="doctor_harold">dr Harold</string>
+    <string name="doctor_serenity">dr. Serenity</string>
+    <string name="doctor_jenny">dr. Jenny</string>
+    <string name="doctor_jhon">dr. Jhon</string>
+    <string name="doctor_betty">dr. Betty</string>
+
+    <string name="specialty_radiology">Radiology specialist</string>
+    <string name="specialty_dentistry">Dentistry</string>
+    <string name="specialty_ent">ENT</string>
+    <string name="specialty_ophthalmologist">Ophthalmologist</string>
+    <string name="specialty_general">General</string>
+
+    <string name="date_july_7">7 Juli 2023</string>
+    <string name="time_9_am">09: 00 Am</string>
+
+    <string name="status_cancel">Cancel</string>
+    <string name="status_complete">Complete</string>
+    <string name="status_upcoming">Upcoming</string>
+
+    <string name="action_reschedule">Reschedule</string>
+    <string name="action_new_appointment">Make new appointment</string>
+
+    <string name="doctor_profile_name">drg. Claire anjani Sp.Pros</string>
+    <string name="doctor_profile_specialty">Dentistry specialist</string>
+    <string name="about_doctor">About doctor</string>
+    <string name="about_doctor_text">Focusing on dealing with the problem of replacing missing teeth. Such as the manufacture of fixed dentures in the form of crowns and bridges as well as veneers, dental implants and removable dentures in the form of complete and partial dentures</string>
+
+    <string name="experience">Experience</string>
+    <string name="patients">Patient</string>
+
+    <string name="date_title">Date</string>
+    <string name="time_title">Time</string>
+    <string name="confirm_schedule">Confirm Schedule</string>
+
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="day_sun">Sun</string>
+
+    <string name="message_placeholder">Message screen (coming soon)</string>
+    <string name="setting_placeholder">Setting screen (coming soon)</string>
+
+    <string name="content_search">Search</string>
+    <string name="content_notification">Notifications</string>
+    <string name="content_back">Back</string>
+    <string name="content_doctor_avatar">Doctor avatar</string>
+</resources>

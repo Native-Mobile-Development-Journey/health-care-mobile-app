@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Text.SMD.DisplaySemibold18" parent="">
+        <item name="android:textSize">@dimen/text_18</item>
+        <item name="android:textColor">@color/base_black</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Text.SMD.TitleMedium16" parent="">
+        <item name="android:textSize">@dimen/text_16</item>
+        <item name="android:textColor">@color/base_black</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Text.SMD.LabelMedium14" parent="">
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:textColor">@color/neutral_700</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Text.SMD.Regular14" parent="">
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:textColor">@color/neutral_400</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="Text.SMD.Medium12" parent="">
+        <item name="android:textSize">@dimen/text_12</item>
+        <item name="android:textColor">@color/neutral_600</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Text.SMD.Regular12" parent="">
+        <item name="android:textSize">@dimen/text_12</item>
+        <item name="android:textColor">@color/neutral_500</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="Text.SMD.Regular10" parent="">
+        <item name="android:textSize">@dimen/text_10</item>
+        <item name="android:textColor">@color/neutral_500</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="Widget.SMD.ButtonPrimary" parent="">
+        <item name="android:background">@drawable/bg_primary_button</item>
+        <item name="android:paddingStart">@dimen/space_16</item>
+        <item name="android:paddingEnd">@dimen/space_16</item>
+        <item name="android:paddingTop">@dimen/space_12</item>
+        <item name="android:paddingBottom">@dimen/space_12</item>
+        <item name="android:textColor">@color/base_white</item>
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+</resources>

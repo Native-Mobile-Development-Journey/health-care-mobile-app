@@ -1,0 +1,13 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.SMDProject" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_500</item>
+        <item name="colorOnPrimary">@color/base_white</item>
+        <item name="colorSecondary">@color/primary_600</item>
+        <item name="colorOnSecondary">@color/base_white</item>
+        <item name="android:statusBarColor">@color/primary_500</item>
+        <item name="android:navigationBarColor">@color/base_white</item>
+    </style>
+
+    <style name="Theme.SMDProject" parent="Base.Theme.SMDProject" />
+</resources>
