@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:padding="12dp"
+    android:background="@drawable/bg_stat_item">
+
+    <TextView
+        android:id="@+id/text_slot_day"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Mon"
+        style="@style/Text.SMD.SemiBold14"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/button_remove_slot" />
+
+    <TextView
+        android:id="@+id/text_slot_time"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="09:00 AM - 10:00 AM"
+        style="@style/Text.SMD.Regular14"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_slot_day"
+        app:layout_constraintEnd_toStartOf="@id/button_remove_slot" />
+
+    <TextView
+        android:id="@+id/text_slot_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Active"
+        style="@style/Text.SMD.LabelMedium14"
+        android:textColor="@color/neutral_500"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_slot_time" />
+
+    <ImageButton
+        android:id="@+id/button_remove_slot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Remove slot"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

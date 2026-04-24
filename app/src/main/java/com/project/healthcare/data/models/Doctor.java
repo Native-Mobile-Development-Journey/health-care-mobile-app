@@ -13,6 +13,13 @@ public class Doctor {
     public int experienceYears;
     public int patientCount;
     public double rating;
+    public int ratingCount;
+    public String qualification;
+    public String languages;
+    public String consultationFee;
+    public String address;
+    public String photoUrl;
+    public boolean isAvailable;
     public boolean recommended;
 
     public Doctor() {
@@ -28,6 +35,13 @@ public class Doctor {
             int experienceYears,
             int patientCount,
             double rating,
+            int ratingCount,
+            String qualification,
+            String languages,
+            String consultationFee,
+            String address,
+            String photoUrl,
+            boolean isAvailable,
             boolean recommended
     ) {
         this.id = id;
@@ -38,6 +52,13 @@ public class Doctor {
         this.experienceYears = experienceYears;
         this.patientCount = patientCount;
         this.rating = rating;
+        this.ratingCount = ratingCount;
+        this.qualification = qualification;
+        this.languages = languages;
+        this.consultationFee = consultationFee;
+        this.address = address;
+        this.photoUrl = photoUrl;
+        this.isAvailable = isAvailable;
         this.recommended = recommended;
     }
 }

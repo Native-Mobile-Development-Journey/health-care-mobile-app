@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import com.project.healthcare.data.models.Appointment;
 import com.project.healthcare.data.models.Conversation;
 import com.project.healthcare.data.models.Doctor;
+import com.project.healthcare.data.models.DoctorAvailabilitySlot;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -45,10 +46,20 @@ public class AppRepository {
         void onError(String message);
     }
 
+    public interface DoctorCallback {
+        void onDoctorLoaded(@Nullable Doctor doctor);
+
+        void onError(String message);
+    }
+
     private static final String NODE_USERS = "users";
     private static final String NODE_DOCTORS = "doctors";
     private static final String NODE_APPOINTMENTS = "appointments";
     private static final String NODE_CONVERSATIONS = "conversations";
+    private static final String DOCS_COLLECTION = "doctors";
+    private static final String APPOINTMENTS_COLLECTION = "appointments";
+    private static final String AVAILABILITY_COLLECTION = "availability";
+    private static final String PATIENTS_COLLECTION = "patients";
 
     private static volatile AppRepository instance;
 
@@ -159,6 +170,186 @@ public class AppRepository {
         functions.getHttpsCallable("setUserRoleClaim")
                 .call(data)
                 .addOnSuccessListener((HttpsCallableResult result) -> {
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
+    }
+
+    public void saveDoctorProfile(Doctor doctor, @Nullable CompletionCallback callback) {
+        if (doctor == null || doctor.id == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid doctor data");
+            }
+            return;
+        }
+
+        DocumentReference document = firestore.collection(DOCS_COLLECTION).document(doctor.id);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("uid", doctor.id);
+        payload.put("name", doctor.name);
+        payload.put("specialty", doctor.specialty);
+        payload.put("hospital", doctor.hospital);
+        payload.put("bio", doctor.bio);
+        payload.put("experienceYears", doctor.experienceYears);
+        payload.put("patientCount", doctor.patientCount);
+        payload.put("rating", doctor.rating);
+        payload.put("ratingCount", doctor.ratingCount);
+        payload.put("qualification", doctor.qualification);
+        payload.put("languages", doctor.languages);
+        payload.put("consultationFee", doctor.consultationFee);
+        payload.put("address", doctor.address);
+        payload.put("photoUrl", doctor.photoUrl);
+        payload.put("isAvailable", doctor.isAvailable);
+        payload.put("updatedAt", System.currentTimeMillis());
+
+        if (callback == null) {
+            document.set(payload);
+            return;
+        }
+
+        document.set(payload)
+                .addOnSuccessListener(unused -> callback.onComplete(true, null))
+                .addOnFailureListener(e -> callback.onComplete(false, e.getMessage()));
+    }
+
+    public void getDoctorProfile(String doctorId, DoctorCallback callback) {
+        if (doctorId == null) {
+            callback.onDoctorLoaded(null);
+            return;
+        }
+
+        firestore.collection(DOCS_COLLECTION).document(doctorId).get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot == null || !snapshot.exists()) {
+                        callback.onDoctorLoaded(null);
+                        return;
+                    }
+                    Doctor doctor = snapshot.toObject(Doctor.class);
+                    if (doctor != null && (doctor.id == null || doctor.id.isEmpty())) {
+                        doctor.id = doctorId;
+                    }
+                    callback.onDoctorLoaded(doctor);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void saveDoctorAvailabilitySlot(String doctorId, DoctorAvailabilitySlot slot, @Nullable CompletionCallback callback) {
+        if (doctorId == null || slot == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid availability slot");
+            }
+            return;
+        }
+
+        String slotId = slot.id != null && !slot.id.trim().isEmpty() ? slot.id : firestore.collection(DOCS_COLLECTION).document(doctorId).collection(AVAILABILITY_COLLECTION).document().getId();
+        slot.id = slotId;
+        DocumentReference document = firestore.collection(DOCS_COLLECTION)
+                .document(doctorId)
+                .collection(AVAILABILITY_COLLECTION)
+                .document(slotId);
+
+        document.set(slot)
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
+    }
+
+    public void deleteDoctorAvailabilitySlot(String doctorId, String slotId, @Nullable CompletionCallback callback) {
+        if (doctorId == null || slotId == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid slot reference");
+            }
+            return;
+        }
+
+        firestore.collection(DOCS_COLLECTION)
+                .document(doctorId)
+                .collection(AVAILABILITY_COLLECTION)
+                .document(slotId)
+                .delete()
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
+    }
+
+    public void getDoctorAvailability(String doctorId, ListCallback<DoctorAvailabilitySlot> callback) {
+        firestore.collection(DOCS_COLLECTION)
+                .document(doctorId)
+                .collection(AVAILABILITY_COLLECTION)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<DoctorAvailabilitySlot> slots = new ArrayList<>();
+                    querySnapshot.getDocuments().forEach(document -> {
+                        DoctorAvailabilitySlot slot = document.toObject(DoctorAvailabilitySlot.class);
+                        if (slot != null) {
+                            slot.id = document.getId();
+                            slots.add(slot);
+                        }
+                    });
+                    callback.onData(slots);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void getDoctorAppointments(String doctorId, ListCallback<Appointment> callback) {
+        firestore.collection(APPOINTMENTS_COLLECTION)
+                .whereEqualTo("doctorId", doctorId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Appointment> appointments = new ArrayList<>();
+                    querySnapshot.getDocuments().forEach(document -> {
+                        Appointment appointment = document.toObject(Appointment.class);
+                        if (appointment != null) {
+                            appointment.id = document.getId();
+                            appointments.add(appointment);
+                        }
+                    });
+                    Collections.sort(appointments, Comparator.comparing(a -> safeLower(a.date + " " + a.time)));
+                    callback.onData(appointments);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void saveDoctorPatientReference(String doctorId, String patientUid, String patientName, String lastAppointmentDate, String status, @Nullable CompletionCallback callback) {
+        if (doctorId == null || patientUid == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid doctor/patient reference");
+            }
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("patientUid", patientUid);
+        payload.put("patientName", patientName);
+        payload.put("lastAppointmentDate", lastAppointmentDate);
+        payload.put("lastAppointmentStatus", status);
+
+        firestore.collection(DOCS_COLLECTION)
+                .document(doctorId)
+                .collection(PATIENTS_COLLECTION)
+                .document(patientUid)
+                .set(payload)
+                .addOnSuccessListener(unused -> {
                     if (callback != null) {
                         callback.onComplete(true, null);
                     }

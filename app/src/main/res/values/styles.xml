@@ -43,6 +43,25 @@
         <item name="android:fontFamily">sans-serif</item>
     </style>
 
+    <style name="Text.SMD.SemiBold14" parent="">
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:textColor">@color/base_black</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Text.SMD.SemiBold16" parent="">
+        <item name="android:textSize">@dimen/text_16</item>
+        <item name="android:textColor">@color/base_black</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Text.SMD.SerifSemibold16" parent="">
+        <item name="android:textSize">@dimen/text_16</item>
+        <item name="android:textColor">@color/base_black</item>
+        <item name="android:fontFamily">serif</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <style name="Widget.SMD.ButtonPrimary" parent="">
         <item name="android:background">@drawable/bg_primary_button</item>
         <item name="android:paddingStart">@dimen/space_16</item>
