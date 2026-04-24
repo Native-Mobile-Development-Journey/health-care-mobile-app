@@ -96,13 +96,14 @@
                 android:layout_marginTop="@dimen/space_16"
                 android:text="@string/settings_preferences" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_setting_options"
+            <ListView
+                android:id="@+id/list_setting_options"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_8"
+                android:divider="@android:color/transparent"
+                android:dividerHeight="@dimen/space_8"
                 android:nestedScrollingEnabled="false"
-                tools:itemCount="4"
                 tools:listitem="@layout/item_setting_option" />
 
             <Button

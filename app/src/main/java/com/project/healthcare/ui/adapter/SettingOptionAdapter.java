@@ -1,13 +1,15 @@
 package com.project.healthcare.ui.adapter;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.project.healthcare.R;
 import com.project.healthcare.ui.model.SettingOption;
@@ -15,16 +17,24 @@ import com.project.healthcare.ui.model.SettingOption;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SettingOptionAdapter extends RecyclerView.Adapter<SettingOptionAdapter.SettingOptionViewHolder> {
+public class SettingOptionAdapter extends BaseAdapter {
 
-    public interface OnSettingOptionClickListener {
-        void onSettingOptionClick(SettingOption option);
+    public interface OnSettingActionListener {
+        void onRegularOptionClick(SettingOption option);
+
+        void onSecurityPasswordSubmit(EditText passwordInput, Button submitButton);
     }
 
     private final List<SettingOption> items = new ArrayList<>();
-    private final OnSettingOptionClickListener listener;
+    private final LayoutInflater inflater;
+    private final int securityPosition;
+    private final OnSettingActionListener listener;
 
-    public SettingOptionAdapter(OnSettingOptionClickListener listener) {
+    private int expandedPosition = -1;
+
+    public SettingOptionAdapter(Context context, int securityPosition, OnSettingActionListener listener) {
+        this.inflater = LayoutInflater.from(context);
+        this.securityPosition = securityPosition;
         this.listener = listener;
     }
 
@@ -34,40 +44,79 @@ public class SettingOptionAdapter extends RecyclerView.Adapter<SettingOptionAdap
         notifyDataSetChanged();
     }
 
-    @NonNull
     @Override
-    public SettingOptionViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_setting_option, parent, false);
-        return new SettingOptionViewHolder(view);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull SettingOptionViewHolder holder, int position) {
-        SettingOption item = items.get(position);
-        holder.title.setText(item.title);
-        holder.subtitle.setText(item.subtitle);
-        holder.icon.setImageResource(item.iconRes);
-        holder.root.setOnClickListener(v -> listener.onSettingOptionClick(item));
-    }
-
-    @Override
-    public int getItemCount() {
+    public int getCount() {
         return items.size();
     }
 
-    static class SettingOptionViewHolder extends RecyclerView.ViewHolder {
+    @Override
+    public SettingOption getItem(int position) {
+        return items.get(position);
+    }
 
-        final View root;
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        SettingOptionViewHolder holder;
+
+        if (convertView == null) {
+            convertView = inflater.inflate(R.layout.item_setting_option, parent, false);
+            holder = new SettingOptionViewHolder(convertView);
+            convertView.setTag(holder);
+        } else {
+            holder = (SettingOptionViewHolder) convertView.getTag();
+        }
+
+        SettingOption item = getItem(position);
+        holder.title.setText(item.title);
+        holder.subtitle.setText(item.subtitle);
+        holder.icon.setImageResource(item.iconRes);
+
+        boolean isSecurityItem = position == securityPosition;
+        boolean isExpanded = isSecurityItem && expandedPosition == position;
+        holder.inlineSecurityPanel.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
+
+        holder.optionRow.setOnClickListener(v -> {
+            if (isSecurityItem) {
+                expandedPosition = expandedPosition == position ? -1 : position;
+                notifyDataSetChanged();
+                return;
+            }
+
+            if (expandedPosition != -1) {
+                expandedPosition = -1;
+                notifyDataSetChanged();
+            }
+
+            listener.onRegularOptionClick(item);
+        });
+
+        holder.securitySubmitButton.setOnClickListener(v -> listener.onSecurityPasswordSubmit(holder.securityPasswordInput, holder.securitySubmitButton));
+        return convertView;
+    }
+
+    static class SettingOptionViewHolder {
+
+        final View optionRow;
         final ImageView icon;
         final TextView title;
         final TextView subtitle;
+        final LinearLayout inlineSecurityPanel;
+        final EditText securityPasswordInput;
+        final Button securitySubmitButton;
 
-        SettingOptionViewHolder(@NonNull View itemView) {
-            super(itemView);
-            root = itemView.findViewById(R.id.item_setting_option_root);
+        SettingOptionViewHolder(View itemView) {
+            optionRow = itemView.findViewById(R.id.layout_setting_option_row);
             icon = itemView.findViewById(R.id.image_setting_icon);
             title = itemView.findViewById(R.id.text_setting_title);
             subtitle = itemView.findViewById(R.id.text_setting_subtitle);
+            inlineSecurityPanel = itemView.findViewById(R.id.layout_setting_inline_security_panel);
+            securityPasswordInput = itemView.findViewById(R.id.input_setting_inline_new_password);
+            securitySubmitButton = itemView.findViewById(R.id.button_setting_inline_change_password);
         }
     }
 }
