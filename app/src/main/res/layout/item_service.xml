@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/item_service_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackgroundBorderless"
-    android:gravity="center"
+    android:gravity="top|center_horizontal"
     android:orientation="vertical"
-    android:padding="@dimen/space_8">
+    android:paddingStart="@dimen/space_4"
+    android:paddingTop="@dimen/space_8"
+    android:paddingEnd="@dimen/space_4"
+    android:paddingBottom="@dimen/space_8">
 
     <FrameLayout
         android:id="@+id/service_icon_container"
@@ -26,13 +30,21 @@
             android:tint="@color/neutral_400" />
     </FrameLayout>
 
-    <TextView
+    <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/service_label"
         style="@style/Text.SMD.Medium12"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_8"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
         android:text="Service"
-        android:textColor="@color/base_black" />
+        android:textAlignment="center"
+        android:textColor="@color/base_black"
+        app:autoSizeMaxTextSize="@dimen/text_12"
+        app:autoSizeMinTextSize="@dimen/text_10"
+        app:autoSizeStepGranularity="1sp"
+        app:autoSizeTextType="uniform" />
 
 </LinearLayout>
