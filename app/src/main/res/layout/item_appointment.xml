@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/item_appointment_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/space_12"
+    app:cardBackgroundColor="@color/base_white"
+    app:cardCornerRadius="@dimen/radius_16"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_16">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="56dp"
+                android:layout_height="61dp"
+                android:background="@drawable/bg_doctor_placeholder" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_8"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/text_appointment_doctor"
+                    style="@style/Text.SMD.TitleMedium16"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/doctor_default_name" />
+
+                <TextView
+                    android:id="@+id/text_appointment_specialty"
+                    style="@style/Text.SMD.Regular10"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/specialty_default" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size_12"
+                        android:layout_height="@dimen/icon_size_12"
+                        android:src="@android:drawable/ic_menu_mylocation"
+                        android:tint="@color/blue_500" />
+
+                    <TextView
+                        android:id="@+id/text_appointment_hospital"
+                        style="@style/Text.SMD.Regular12"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_4"
+                        android:text="@string/hospital_default"
+                        android:textColor="@color/blue_500" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/text_appointment_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_status_upcoming_blue"
+                android:paddingStart="@dimen/space_8"
+                android:paddingTop="@dimen/space_4"
+                android:paddingEnd="@dimen/space_8"
+                android:paddingBottom="@dimen/space_4"
+                android:text="@string/status_upcoming"
+                android:textColor="@color/blue_500"
+                android:textSize="@dimen/text_8" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="@dimen/space_12"
+            android:background="@color/neutral_200" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size_14"
+                        android:layout_height="@dimen/icon_size_14"
+                        android:src="@android:drawable/ic_menu_recent_history"
+                        android:tint="@color/neutral_500" />
+
+                    <TextView
+                        android:id="@+id/text_appointment_time"
+                        style="@style/Text.SMD.Regular12"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="@string/no_time_selected" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size_14"
+                        android:layout_height="@dimen/icon_size_14"
+                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:tint="@color/neutral_500" />
+
+                    <TextView
+                        android:id="@+id/text_appointment_date"
+                        style="@style/Text.SMD.Regular12"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="@string/no_date_selected" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/button_appointment_action"
+                style="@style/Widget.SMD.ButtonPrimary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/action_reschedule"
+                android:textAllCaps="false" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
