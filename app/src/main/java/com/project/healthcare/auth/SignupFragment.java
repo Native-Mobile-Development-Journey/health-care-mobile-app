@@ -90,6 +90,27 @@ public class SignupFragment extends Fragment {
                 });
     }
 
+    private String resolveAuthError(@Nullable Exception exception) {
+        if (exception == null) {
+            return getString(R.string.auth_error_generic);
+        }
+
+        Log.e(TAG, "Signup failed", exception);
+
+        String localizedMessage = exception.getLocalizedMessage();
+        String normalized = localizedMessage == null ? "" : localizedMessage.toUpperCase(Locale.US);
+
+        if (normalized.contains("CONFIGURATION_NOT_FOUND")) {
+            return getString(R.string.auth_error_firebase_configuration);
+        }
+
+        if (!TextUtils.isEmpty(localizedMessage)) {
+            return localizedMessage;
+        }
+
+        return getString(R.string.auth_error_generic);
+    }
+
     private void updateProfileAndContinue(String name, String email) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null) {
