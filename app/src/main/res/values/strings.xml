@@ -7,7 +7,7 @@
     <string name="nav_setting">Setting</string>
 
     <string name="welcome_back">Welcome Back</string>
-    <string name="user_name">Jacob Jones</string>
+    <string name="user_name">Patient</string>
 
     <string name="service_emergency">Emergency</string>
     <string name="service_hospital">Hospital</string>
@@ -24,43 +24,33 @@
     <string name="schedule_today">Schedule today</string>
     <string name="doctors_recommendation">Doctor\'s recommendation</string>
     <string name="see_more">See more</string>
-
-    <string name="hospital_cengkareng">Cengkareng Hospital</string>
-    <string name="doctor_zubaidah">dr. Zubaidah</string>
-    <string name="doctor_claire">drg. Claire</string>
-    <string name="doctor_harold">dr Harold</string>
-    <string name="doctor_serenity">dr. Serenity</string>
-    <string name="doctor_jenny">dr. Jenny</string>
-    <string name="doctor_jhon">dr. Jhon</string>
-    <string name="doctor_betty">dr. Betty</string>
-
-    <string name="specialty_radiology">Radiology specialist</string>
-    <string name="specialty_dentistry">Dentistry</string>
-    <string name="specialty_ent">ENT</string>
-    <string name="specialty_ophthalmologist">Ophthalmologist</string>
-    <string name="specialty_general">General</string>
-
-    <string name="date_july_7">7 Juli 2023</string>
-    <string name="time_9_am">09: 00 Am</string>
+    <string name="services_title">Services</string>
+    <string name="doctor_default_name">Doctor</string>
+    <string name="specialty_default">Specialist</string>
+    <string name="hospital_default">Hospital</string>
 
     <string name="status_cancel">Cancel</string>
     <string name="status_complete">Complete</string>
     <string name="status_upcoming">Upcoming</string>
+    <string name="status_all">All</string>
+    <string name="status_completed">Completed</string>
 
     <string name="action_reschedule">Reschedule</string>
     <string name="action_new_appointment">Make new appointment</string>
 
-    <string name="doctor_profile_name">drg. Claire anjani Sp.Pros</string>
-    <string name="doctor_profile_specialty">Dentistry specialist</string>
     <string name="about_doctor">About doctor</string>
-    <string name="about_doctor_text">Focusing on dealing with the problem of replacing missing teeth. Such as the manufacture of fixed dentures in the form of crowns and bridges as well as veneers, dental implants and removable dentures in the form of complete and partial dentures</string>
+    <string name="about_doctor_loading">Doctor profile is loading.</string>
 
     <string name="experience">Experience</string>
     <string name="patients">Patient</string>
+    <string name="rating">Rating</string>
+    <string name="value_unavailable">--</string>
 
     <string name="date_title">Date</string>
     <string name="time_title">Time</string>
     <string name="confirm_schedule">Confirm Schedule</string>
+    <string name="no_date_selected">Select date</string>
+    <string name="no_time_selected">Select time</string>
 
     <string name="day_mon">Mon</string>
     <string name="day_tue">Tue</string>
@@ -70,8 +60,27 @@
     <string name="day_sat">Sat</string>
     <string name="day_sun">Sun</string>
 
-    <string name="message_placeholder">Message screen (coming soon)</string>
-    <string name="setting_placeholder">Setting screen (coming soon)</string>
+    <string name="schedule_empty">No appointments found.</string>
+    <string name="schedule_action_new_appointment">Choose a new slot for this doctor</string>
+    <string name="schedule_selection_required">Please select date and time first.</string>
+    <string name="schedule_confirm_success">Appointment saved successfully.</string>
+    <string name="messages_subtitle">Stay connected with your doctors</string>
+    <string name="messages_search_hint">Search by doctor name</string>
+    <string name="messages_empty">No conversations available.</string>
+    <string name="conversation_message_default">No recent messages</string>
+    <string name="messages_opening_thread">Opening chat with %1$s</string>
+    <string name="settings_preferences">Preferences</string>
+    <string name="settings_patient">Patient</string>
+    <string name="settings_guest_email">guest@healthcare.app</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_subtitle">Control reminders and alerts</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_subtitle">Manage visibility and permissions</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_security_subtitle">Update password and account safety</string>
+    <string name="settings_help">Help &amp; support</string>
+    <string name="settings_help_subtitle">FAQs and contact options</string>
+    <string name="doctor_not_ready">Doctor details are still loading.</string>
 
     <string name="auth_login_title">Welcome back</string>
     <string name="auth_login_subtitle">Sign in to continue your healthcare journey</string>
@@ -106,4 +115,5 @@
     <string name="content_notification">Notifications</string>
     <string name="content_back">Back</string>
     <string name="content_doctor_avatar">Doctor avatar</string>
+    <string name="content_service_item">Service icon</string>
 </resources>

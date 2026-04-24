@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/item_doctor_root"
+    android:layout_width="108dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/space_8"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:orientation="vertical"
+    android:padding="@dimen/space_4">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="73dp"
+        android:background="@drawable/bg_doctor_placeholder" />
+
+    <TextView
+        android:id="@+id/text_doctor_name"
+        style="@style/Text.SMD.LabelMedium14"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:text="@string/doctor_default_name"
+        android:textColor="@color/base_black" />
+
+    <TextView
+        android:id="@+id/text_doctor_specialty"
+        style="@style/Text.SMD.Regular10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/specialty_default" />
+
+</LinearLayout>

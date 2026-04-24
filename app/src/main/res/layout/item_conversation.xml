@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/item_conversation_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/space_8"
+    android:background="@drawable/bg_stat_item"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="@dimen/space_12">
+
+    <FrameLayout
+        android:layout_width="@dimen/avatar_size_56"
+        android:layout_height="@dimen/avatar_size_56"
+        android:background="@drawable/bg_avatar_circle">
+
+        <ImageView
+            android:layout_width="@dimen/icon_size_24"
+            android:layout_height="@dimen/icon_size_24"
+            android:layout_gravity="center"
+            android:src="@android:drawable/ic_dialog_email"
+            android:tint="@color/neutral_600" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_12"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/text_conversation_name"
+            style="@style/Text.SMD.TitleMedium16"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/doctor_default_name" />
+
+        <TextView
+            android:id="@+id/text_conversation_message"
+            style="@style/Text.SMD.Regular12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:maxLines="1"
+            android:text="@string/conversation_message_default"
+            android:textColor="@color/neutral_500" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/text_conversation_time"
+            style="@style/Text.SMD.Regular10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/value_unavailable" />
+
+        <TextView
+            android:id="@+id/text_conversation_unread"
+            style="@style/Text.SMD.Regular10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="@dimen/space_6"
+            android:background="@drawable/bg_unread_badge"
+            android:paddingStart="@dimen/space_6"
+            android:paddingTop="@dimen/space_2"
+            android:paddingEnd="@dimen/space_6"
+            android:paddingBottom="@dimen/space_2"
+            android:text="0"
+            android:textColor="@color/base_white" />
+    </LinearLayout>
+
+</LinearLayout>

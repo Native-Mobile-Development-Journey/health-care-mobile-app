@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -13,6 +14,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import com.project.healthcare.auth.AuthActivity;
+import com.project.healthcare.data.AppRepository;
 import com.project.healthcare.fragments.DoctorDetailFragment;
 import com.project.healthcare.fragments.HomeFragment;
 import com.project.healthcare.fragments.MessageFragment;
@@ -20,6 +22,7 @@ import com.project.healthcare.fragments.ScheduleFragment;
 import com.project.healthcare.fragments.SettingFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,12 +52,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
             Intent intent = new Intent(this, AuthActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
             finish();
+            return;
         }
+
+        AppRepository repository = AppRepository.getInstance();
+        String displayName = currentUser.getDisplayName() != null && !currentUser.getDisplayName().trim().isEmpty()
+                ? currentUser.getDisplayName().trim()
+                : "Patient";
+        String email = currentUser.getEmail() != null ? currentUser.getEmail() : "";
+        repository.createOrUpdateUserProfile(currentUser.getUid(), displayName, email);
     }
 
     private void setupInsets() {
@@ -116,9 +128,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void openDoctorDetail() {
+        openDoctorDetail(null, null);
+    }
+
+    public void openDoctorDetail(@Nullable String doctorId, @Nullable String appointmentId) {
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_container, new DoctorDetailFragment(), "doctor_detail")
+                .replace(R.id.fragment_container, DoctorDetailFragment.newInstance(doctorId, appointmentId), "doctor_detail")
                 .addToBackStack("doctor_detail")
                 .commit();
         bottomNavigationView.setVisibility(View.GONE);

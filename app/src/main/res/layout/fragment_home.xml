@@ -54,7 +54,7 @@
                             android:layout_height="@dimen/icon_size_24"
                             android:layout_gravity="center"
                             android:src="@android:drawable/ic_menu_gallery"
-                            app:tint="@color/neutral_600" />
+                            android:tint="@color/neutral_600" />
                     </FrameLayout>
 
                     <LinearLayout
@@ -72,6 +72,7 @@
                             android:textColor="@color/neutral_300" />
 
                         <TextView
+                            android:id="@+id/text_user_name"
                             style="@style/Text.SMD.DisplaySemibold18"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -84,7 +85,7 @@
                         android:layout_height="@dimen/icon_size_24"
                         android:contentDescription="@string/content_notification"
                         android:src="@android:drawable/ic_dialog_info"
-                        app:tint="@color/base_white" />
+                        android:tint="@color/base_white" />
 
                 </LinearLayout>
 
@@ -106,248 +107,25 @@
                         android:orientation="vertical"
                         android:padding="@dimen/space_16">
 
-                        <LinearLayout
+                        <TextView
+                            style="@style/Text.SMD.LabelMedium14"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/services_title" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recycler_home_services"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="@dimen/avatar_size_56"
-                                    android:layout_height="@dimen/avatar_size_56"
-                                    android:background="@drawable/bg_service_tile">
-
-                                    <ImageView
-                                        android:layout_width="@dimen/icon_size_24"
-                                        android:layout_height="@dimen/icon_size_24"
-                                        android:layout_gravity="center"
-                                        android:src="@android:drawable/ic_dialog_alert"
-                                        app:tint="@color/neutral_400" />
-                                </FrameLayout>
-
-                                <TextView
-                                    style="@style/Text.SMD.Medium12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_8"
-                                    android:text="@string/service_emergency" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="@dimen/avatar_size_56"
-                                    android:layout_height="@dimen/avatar_size_56"
-                                    android:background="@drawable/bg_service_tile">
-
-                                    <ImageView
-                                        android:layout_width="@dimen/icon_size_24"
-                                        android:layout_height="@dimen/icon_size_24"
-                                        android:layout_gravity="center"
-                                        android:src="@android:drawable/ic_menu_compass"
-                                        app:tint="@color/neutral_400" />
-                                </FrameLayout>
-
-                                <TextView
-                                    style="@style/Text.SMD.Medium12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_8"
-                                    android:text="@string/service_hospital" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="@dimen/avatar_size_56"
-                                    android:layout_height="@dimen/avatar_size_56"
-                                    android:background="@drawable/bg_service_tile">
-
-                                    <ImageView
-                                        android:layout_width="@dimen/icon_size_24"
-                                        android:layout_height="@dimen/icon_size_24"
-                                        android:layout_gravity="center"
-                                        android:src="@android:drawable/ic_menu_edit"
-                                        app:tint="@color/neutral_400" />
-                                </FrameLayout>
-
-                                <TextView
-                                    style="@style/Text.SMD.Medium12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_8"
-                                    android:text="@string/service_blood" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="@dimen/avatar_size_56"
-                                    android:layout_height="@dimen/avatar_size_56"
-                                    android:background="@drawable/bg_service_tile">
-
-                                    <ImageView
-                                        android:layout_width="@dimen/icon_size_24"
-                                        android:layout_height="@dimen/icon_size_24"
-                                        android:layout_gravity="center"
-                                        android:src="@android:drawable/ic_menu_agenda"
-                                        app:tint="@color/neutral_400" />
-                                </FrameLayout>
-
-                                <TextView
-                                    style="@style/Text.SMD.Medium12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_8"
-                                    android:text="@string/service_prescription" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/space_16"
-                            android:gravity="center"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="@dimen/avatar_size_56"
-                                    android:layout_height="@dimen/avatar_size_56"
-                                    android:background="@drawable/bg_service_tile_selected">
-
-                                    <ImageView
-                                        android:layout_width="@dimen/icon_size_24"
-                                        android:layout_height="@dimen/icon_size_24"
-                                        android:layout_gravity="center"
-                                        android:src="@android:drawable/ic_menu_info_details"
-                                        app:tint="@color/base_white" />
-                                </FrameLayout>
-
-                                <TextView
-                                    style="@style/Text.SMD.Medium12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_8"
-                                    android:text="@string/service_doctor"
-                                    android:textColor="@color/primary_500" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="@dimen/avatar_size_56"
-                                    android:layout_height="@dimen/avatar_size_56"
-                                    android:background="@drawable/bg_service_tile">
-
-                                    <ImageView
-                                        android:layout_width="@dimen/icon_size_24"
-                                        android:layout_height="@dimen/icon_size_24"
-                                        android:layout_gravity="center"
-                                        android:src="@android:drawable/ic_menu_recent_history"
-                                        app:tint="@color/neutral_400" />
-                                </FrameLayout>
-
-                                <TextView
-                                    style="@style/Text.SMD.Medium12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_8"
-                                    android:text="@string/service_checkup" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="@dimen/avatar_size_56"
-                                    android:layout_height="@dimen/avatar_size_56"
-                                    android:background="@drawable/bg_service_tile">
-
-                                    <ImageView
-                                        android:layout_width="@dimen/icon_size_24"
-                                        android:layout_height="@dimen/icon_size_24"
-                                        android:layout_gravity="center"
-                                        android:src="@android:drawable/ic_menu_mylocation"
-                                        app:tint="@color/neutral_400" />
-                                </FrameLayout>
-
-                                <TextView
-                                    style="@style/Text.SMD.Medium12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_8"
-                                    android:text="@string/service_location" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:orientation="vertical">
-
-                                <FrameLayout
-                                    android:layout_width="@dimen/avatar_size_56"
-                                    android:layout_height="@dimen/avatar_size_56"
-                                    android:background="@drawable/bg_service_tile">
-
-                                    <ImageView
-                                        android:layout_width="@dimen/icon_size_24"
-                                        android:layout_height="@dimen/icon_size_24"
-                                        android:layout_gravity="center"
-                                        android:src="@android:drawable/ic_menu_search"
-                                        app:tint="@color/neutral_400" />
-                                </FrameLayout>
-
-                                <TextView
-                                    style="@style/Text.SMD.Medium12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="@dimen/space_8"
-                                    android:text="@string/service_radiology" />
-                            </LinearLayout>
-                        </LinearLayout>
+                            android:layout_marginTop="@dimen/space_8"
+                            android:nestedScrollingEnabled="false"
+                            tools:itemCount="8"
+                            tools:listitem="@layout/item_service" />
 
                     </LinearLayout>
+
                 </com.google.android.material.card.MaterialCardView>
+
             </FrameLayout>
 
             <LinearLayout
@@ -357,33 +135,31 @@
                 android:paddingStart="@dimen/space_24"
                 android:paddingEnd="@dimen/space_24">
 
-                <LinearLayout
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layout_home_search"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_16"
-                    android:background="@drawable/bg_search_field"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="@dimen/space_16"
-                    android:paddingTop="@dimen/space_12"
-                    android:paddingEnd="@dimen/space_16"
-                    android:paddingBottom="@dimen/space_12">
+                    android:hint="@string/find_doctor"
+                    app:boxBackgroundColor="@color/base_white"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxStrokeColor="@color/neutral_300"
+                    app:boxStrokeWidth="1dp"
+                    app:startIconDrawable="@android:drawable/ic_menu_search">
 
-                    <TextView
-                        style="@style/Text.SMD.TitleMedium16"
-                        android:layout_width="0dp"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/input_home_search"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/find_doctor"
-                        android:textColor="@color/neutral_300" />
+                        android:imeOptions="actionSearch"
+                        android:inputType="text"
+                        android:maxLines="1" />
 
-                    <ImageView
-                        android:layout_width="@dimen/icon_size_24"
-                        android:layout_height="@dimen/icon_size_24"
-                        android:contentDescription="@string/content_search"
-                        android:src="@android:drawable/ic_menu_search"
-                        app:tint="@color/neutral_400" />
-                </LinearLayout>
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView
                     style="@style/Text.SMD.LabelMedium14"
@@ -437,29 +213,32 @@
                                     android:layout_width="@dimen/icon_size_12"
                                     android:layout_height="@dimen/icon_size_12"
                                     android:src="@android:drawable/ic_menu_mylocation"
-                                    app:tint="@color/blue_500" />
+                                    android:tint="@color/blue_500" />
 
                                 <TextView
+                                    android:id="@+id/text_schedule_hospital"
                                     style="@style/Text.SMD.Regular12"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/space_4"
-                                    android:text="@string/hospital_cengkareng"
+                                    android:text="@string/hospital_default"
                                     android:textColor="@color/blue_500" />
                             </LinearLayout>
 
                             <TextView
+                                android:id="@+id/text_schedule_doctor"
                                 style="@style/Text.SMD.TitleMedium16"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/space_2"
-                                android:text="@string/doctor_zubaidah" />
+                                android:text="@string/doctor_default_name" />
 
                             <TextView
+                                android:id="@+id/text_schedule_specialty"
                                 style="@style/Text.SMD.Regular10"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/specialty_radiology" />
+                                android:text="@string/specialty_default" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -468,17 +247,19 @@
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/text_schedule_date"
                                 style="@style/Text.SMD.Regular12"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/date_july_7" />
+                                android:text="@string/no_date_selected" />
 
                             <TextView
+                                android:id="@+id/text_schedule_time"
                                 style="@style/Text.SMD.Regular12"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="@dimen/space_4"
-                                android:text="@string/time_9_am" />
+                                android:text="@string/no_time_selected" />
                         </LinearLayout>
 
                     </LinearLayout>
@@ -506,130 +287,19 @@
                         android:textColor="@color/primary_500" />
                 </LinearLayout>
 
-                <HorizontalScrollView
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_home_doctors"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_8"
-                    android:scrollbars="none">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <LinearLayout
-                            android:id="@+id/card_doctor_1"
-                            android:layout_width="99dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="@dimen/space_8"
-                            android:orientation="vertical">
-
-                            <View
-                                android:layout_width="99dp"
-                                android:layout_height="73dp"
-                                android:background="@drawable/bg_doctor_placeholder" />
-
-                            <TextView
-                                style="@style/Text.SMD.LabelMedium14"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="@dimen/space_4"
-                                android:text="@string/doctor_jenny"
-                                android:textColor="@color/base_black" />
-
-                            <TextView
-                                style="@style/Text.SMD.Regular10"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/specialty_ophthalmologist" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/card_doctor_2"
-                            android:layout_width="99dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="@dimen/space_8"
-                            android:orientation="vertical">
-
-                            <View
-                                android:layout_width="99dp"
-                                android:layout_height="73dp"
-                                android:background="@drawable/bg_doctor_placeholder" />
-
-                            <TextView
-                                style="@style/Text.SMD.LabelMedium14"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="@dimen/space_4"
-                                android:text="@string/doctor_jhon"
-                                android:textColor="@color/base_black" />
-
-                            <TextView
-                                style="@style/Text.SMD.Regular10"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/specialty_general" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/card_doctor_3"
-                            android:layout_width="99dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="@dimen/space_8"
-                            android:orientation="vertical">
-
-                            <View
-                                android:layout_width="99dp"
-                                android:layout_height="73dp"
-                                android:background="@drawable/bg_doctor_placeholder" />
-
-                            <TextView
-                                style="@style/Text.SMD.LabelMedium14"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="@dimen/space_4"
-                                android:text="@string/doctor_betty"
-                                android:textColor="@color/base_black" />
-
-                            <TextView
-                                style="@style/Text.SMD.Regular10"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/service_radiology" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/card_doctor_4"
-                            android:layout_width="99dp"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <View
-                                android:layout_width="99dp"
-                                android:layout_height="73dp"
-                                android:background="@drawable/bg_doctor_placeholder" />
-
-                            <TextView
-                                style="@style/Text.SMD.LabelMedium14"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="@dimen/space_4"
-                                android:text="@string/doctor_jenny"
-                                android:textColor="@color/base_black" />
-
-                            <TextView
-                                style="@style/Text.SMD.Regular10"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/specialty_ophthalmologist" />
-                        </LinearLayout>
-
-                    </LinearLayout>
-                </HorizontalScrollView>
+                    android:nestedScrollingEnabled="false"
+                    tools:itemCount="5"
+                    tools:listitem="@layout/item_doctor_recommendation" />
 
             </LinearLayout>
 
         </LinearLayout>
+
     </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

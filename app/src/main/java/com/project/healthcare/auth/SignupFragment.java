@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.project.healthcare.R;
+import com.project.healthcare.data.AppRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
@@ -80,7 +81,7 @@ public class SignupFragment extends Fragment {
                     }
 
                     if (task.isSuccessful()) {
-                        updateProfileAndContinue(name);
+                        updateProfileAndContinue(name, email);
                     } else {
                         setLoading(false);
                         String errorMessage = resolveAuthError(task.getException());
@@ -89,31 +90,10 @@ public class SignupFragment extends Fragment {
                 });
     }
 
-    private String resolveAuthError(@Nullable Exception exception) {
-        if (exception == null) {
-            return getString(R.string.auth_error_generic);
-        }
-
-        Log.e(TAG, "Signup failed", exception);
-
-        String localizedMessage = exception.getLocalizedMessage();
-        String normalized = localizedMessage == null ? "" : localizedMessage.toUpperCase(Locale.US);
-
-        if (normalized.contains("CONFIGURATION_NOT_FOUND")) {
-            return getString(R.string.auth_error_firebase_configuration);
-        }
-
-        if (!TextUtils.isEmpty(localizedMessage)) {
-            return localizedMessage;
-        }
-
-        return getString(R.string.auth_error_generic);
-    }
-
-    private void updateProfileAndContinue(String name) {
+    private void updateProfileAndContinue(String name, String email) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null) {
-            completeSignup();
+            completeSignup(name, email);
             return;
         }
 
@@ -127,11 +107,16 @@ public class SignupFragment extends Fragment {
                     if (!isAdded()) {
                         return;
                     }
-                    completeSignup();
+                    completeSignup(name, email);
                 });
     }
 
-    private void completeSignup() {
+    private void completeSignup(String name, String email) {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser != null) {
+            AppRepository.getInstance().createOrUpdateUserProfile(firebaseUser.getUid(), name, email);
+        }
+
         setLoading(false);
         Toast.makeText(requireContext(), R.string.auth_signup_success, Toast.LENGTH_SHORT).show();
         if (getActivity() instanceof AuthActivity) {
