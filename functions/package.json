@@ -1,0 +1,14 @@
+{
+  "name": "healthcare-app-functions",
+  "description": "Firebase Functions for Healthcare app custom claims",
+  "scripts": {
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.10.1",
+    "firebase-functions": "^4.5.0"
+  }
+}

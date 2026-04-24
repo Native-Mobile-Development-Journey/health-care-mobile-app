@@ -43,6 +43,8 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation(libs.firebase.auth)
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-functions")
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)

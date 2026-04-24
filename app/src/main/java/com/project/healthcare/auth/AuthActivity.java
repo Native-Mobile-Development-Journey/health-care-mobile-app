@@ -16,6 +16,10 @@ import com.project.healthcare.DoctorDashboardActivity;
 import com.project.healthcare.R;
 import com.project.healthcare.data.AppRepository;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GetTokenResult;
+
+import java.util.Locale;
 
 public class AuthActivity extends AppCompatActivity {
 
@@ -66,13 +70,37 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private void routeUserByRole() {
-        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
             openMainAndFinish();
             return;
         }
 
-        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        AppRepository.getInstance().fetchUserRole(uid, new AppRepository.RoleCallback() {
+        user.getIdToken(true).addOnCompleteListener(task -> {
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+
+            if (task.isSuccessful()) {
+                GetTokenResult result = task.getResult();
+                Object claimValue = result == null ? null : result.getClaims().get("role");
+                String role = claimValue instanceof String ? ((String) claimValue).trim().toLowerCase(Locale.ROOT) : null;
+                if (isDoctorRole(role)) {
+                    openDoctorDashboardAndFinish();
+                    return;
+                }
+                if (role != null) {
+                    openMainAndFinish();
+                    return;
+                }
+            }
+
+            fallbackToFirestoreRole(user.getUid());
+        });
+    }
+
+    private void fallbackToFirestoreRole(String uid) {
+        AppRepository.getInstance().fetchUserRoleFromFirestore(uid, new AppRepository.RoleCallback() {
             @Override
             public void onRoleLoaded(@Nullable String role) {
                 if (isFinishing() || isDestroyed()) {

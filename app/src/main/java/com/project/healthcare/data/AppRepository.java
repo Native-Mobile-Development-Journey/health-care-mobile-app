@@ -14,6 +14,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.functions.FirebaseFunctions;
+import com.google.firebase.functions.HttpsCallableResult;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +57,8 @@ public class AppRepository {
     private final DatabaseReference doctorsRef;
     private final DatabaseReference appointmentsRef;
     private final DatabaseReference conversationsRef;
+    private final FirebaseFirestore firestore;
+    private final FirebaseFunctions functions;
 
     private AppRepository() {
         auth = FirebaseAuth.getInstance();
@@ -61,6 +67,8 @@ public class AppRepository {
         doctorsRef = rootRef.child(NODE_DOCTORS);
         appointmentsRef = rootRef.child(NODE_APPOINTMENTS);
         conversationsRef = rootRef.child(NODE_CONVERSATIONS);
+        firestore = FirebaseFirestore.getInstance();
+        functions = FirebaseFunctions.getInstance();
     }
 
     public static AppRepository getInstance() {
@@ -111,6 +119,55 @@ public class AppRepository {
         userRef.updateChildren(profile)
                 .addOnSuccessListener(unused -> callback.onComplete(true, null))
                 .addOnFailureListener(e -> callback.onComplete(false, e.getMessage()));
+    }
+
+    public void saveUserProfileToFirestore(String uid, String name, String email, @Nullable String role, @Nullable CompletionCallback callback) {
+        Map<String, Object> profile = UserProfileDataUtil.buildProfile(uid, name, email, role);
+        DocumentReference document = firestore.collection("users").document(uid);
+        if (callback == null) {
+            document.set(profile);
+            return;
+        }
+
+        document.set(profile)
+                .addOnSuccessListener(unused -> callback.onComplete(true, null))
+                .addOnFailureListener(e -> callback.onComplete(false, e.getMessage()));
+    }
+
+    public void fetchUserRoleFromFirestore(String uid, RoleCallback callback) {
+        firestore.collection("users").document(uid).get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot == null || !snapshot.exists()) {
+                        callback.onRoleLoaded(null);
+                        return;
+                    }
+                    String role = snapshot.getString("role");
+                    if (role != null) {
+                        callback.onRoleLoaded(role.trim().toLowerCase(Locale.ROOT));
+                    } else {
+                        callback.onRoleLoaded(null);
+                    }
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void requestRoleClaim(String uid, String role, @Nullable CompletionCallback callback) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("uid", uid);
+        data.put("role", role);
+
+        functions.getHttpsCallable("setUserRoleClaim")
+                .call(data)
+                .addOnSuccessListener((HttpsCallableResult result) -> {
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
     }
 
     public void fetchUserRole(String uid, RoleCallback callback) {

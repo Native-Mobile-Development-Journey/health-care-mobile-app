@@ -142,28 +142,49 @@ public class SignupFragment extends Fragment {
                     if (!isAdded()) {
                         return;
                     }
-                    saveUserProfileAsync(firebaseUser.getUid(), name, email, role);
-                    completeSignup();
+                    saveUserProfileAndClaim(firebaseUser.getUid(), name, email, role);
                 });
     }
 
-    private void saveUserProfileAsync(String uid, String name, String email, String role) {
-        AppRepository.getInstance().createOrUpdateUserProfile(uid, name, email, role, (success, message) -> {
+    private void saveUserProfileAndClaim(String uid, String name, String email, String role) {
+        AppRepository.getInstance().saveUserProfileToFirestore(uid, name, email, role, (success, message) -> {
             if (!isAdded()) {
                 return;
             }
             if (!success) {
                 Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_LONG).show();
             }
+            AppRepository.getInstance().requestRoleClaim(uid, role, (claimSuccess, claimMessage) -> {
+                if (!isAdded()) {
+                    return;
+                }
+                if (!claimSuccess) {
+                    Toast.makeText(requireContext(), claimMessage != null ? claimMessage : getString(R.string.auth_error_generic), Toast.LENGTH_LONG).show();
+                }
+                refreshTokenAndNavigate();
+            });
         });
     }
 
-    private void completeSignup() {
-        setLoading(false);
-        Toast.makeText(requireContext(), R.string.auth_signup_success, Toast.LENGTH_SHORT).show();
-        if (getActivity() instanceof AuthActivity) {
-            ((AuthActivity) getActivity()).onAuthSuccess();
+    private void refreshTokenAndNavigate() {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            setLoading(false);
+            return;
         }
+
+        firebaseUser.getIdToken(true).addOnCompleteListener(task -> {
+            if (!isAdded()) {
+                return;
+            }
+            setLoading(false);
+            if (!task.isSuccessful()) {
+                Toast.makeText(requireContext(), getString(R.string.auth_signup_success), Toast.LENGTH_SHORT).show();
+            }
+            if (getActivity() instanceof AuthActivity) {
+                ((AuthActivity) getActivity()).onAuthSuccess();
+            }
+        });
     }
 
     private boolean validateInput(String name, String email, String password, String confirmPassword, String role) {
