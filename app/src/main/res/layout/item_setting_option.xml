@@ -56,9 +56,10 @@
         </LinearLayout>
 
         <ImageView
+            android:id="@+id/image_setting_action"
             android:layout_width="@dimen/icon_size_24"
             android:layout_height="@dimen/icon_size_24"
-            android:src="@android:drawable/ic_media_next"
+            android:src="@android:drawable/arrow_down_float"
             android:tint="@color/neutral_400" />
 
     </LinearLayout>
@@ -74,11 +75,39 @@
         android:visibility="gone">
 
         <EditText
-            android:id="@+id/input_setting_inline_new_password"
+            android:id="@+id/input_setting_inline_current_password"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_stat_item"
+            android:hint="@string/settings_current_password_hint"
+            android:inputType="textPassword"
+            android:maxLines="1"
+            android:paddingStart="@dimen/space_12"
+            android:paddingTop="@dimen/space_12"
+            android:paddingEnd="@dimen/space_12"
+            android:paddingBottom="@dimen/space_12" />
+
+        <EditText
+            android:id="@+id/input_setting_inline_new_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:background="@drawable/bg_stat_item"
             android:hint="@string/settings_change_password_hint"
+            android:inputType="textPassword"
+            android:maxLines="1"
+            android:paddingStart="@dimen/space_12"
+            android:paddingTop="@dimen/space_12"
+            android:paddingEnd="@dimen/space_12"
+            android:paddingBottom="@dimen/space_12" />
+
+        <EditText
+            android:id="@+id/input_setting_inline_confirm_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:background="@drawable/bg_stat_item"
+            android:hint="@string/settings_confirm_password_hint"
             android:inputType="textPassword"
             android:maxLines="1"
             android:paddingStart="@dimen/space_12"

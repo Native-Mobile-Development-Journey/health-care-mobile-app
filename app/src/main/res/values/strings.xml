@@ -78,8 +78,13 @@
     <string name="settings_privacy_subtitle">Manage visibility and permissions</string>
     <string name="settings_security">Security</string>
     <string name="settings_security_subtitle">Update password </string>
+    <string name="settings_current_password_hint">Enter current password</string>
+    <string name="settings_current_password_required">Current password is required.</string>
     <string name="settings_change_password_hint">Enter new password</string>
+    <string name="settings_confirm_password_hint">Confirm new password</string>
     <string name="settings_change_password_action">Change password</string>
+    <string name="settings_password_mismatch">New password and confirm password do not match.</string>
+    <string name="settings_wrong_current_password">Wrong current password. Please try again.</string>
     <string name="settings_password_update_success">Password updated successfully.</string>
     <string name="settings_password_update_failed">Could not update password. Please try again.</string>
     <string name="settings_password_reauth_required">Please login again before changing password.</string>

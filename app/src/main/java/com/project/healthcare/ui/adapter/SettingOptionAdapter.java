@@ -22,7 +22,7 @@ public class SettingOptionAdapter extends BaseAdapter {
     public interface OnSettingActionListener {
         void onRegularOptionClick(SettingOption option);
 
-        void onSecurityPasswordSubmit(EditText passwordInput, Button submitButton);
+        void onSecurityPasswordSubmit(EditText currentPasswordInput, EditText passwordInput, EditText confirmPasswordInput, Button submitButton);
     }
 
     private final List<SettingOption> items = new ArrayList<>();
@@ -95,7 +95,12 @@ public class SettingOptionAdapter extends BaseAdapter {
             listener.onRegularOptionClick(item);
         });
 
-        holder.securitySubmitButton.setOnClickListener(v -> listener.onSecurityPasswordSubmit(holder.securityPasswordInput, holder.securitySubmitButton));
+        holder.securitySubmitButton.setOnClickListener(v -> listener.onSecurityPasswordSubmit(
+            holder.securityCurrentPasswordInput,
+            holder.securityPasswordInput,
+            holder.securityConfirmPasswordInput,
+            holder.securitySubmitButton
+        ));
         return convertView;
     }
 
@@ -106,7 +111,9 @@ public class SettingOptionAdapter extends BaseAdapter {
         final TextView title;
         final TextView subtitle;
         final LinearLayout inlineSecurityPanel;
+        final EditText securityCurrentPasswordInput;
         final EditText securityPasswordInput;
+        final EditText securityConfirmPasswordInput;
         final Button securitySubmitButton;
 
         SettingOptionViewHolder(View itemView) {
@@ -115,7 +122,9 @@ public class SettingOptionAdapter extends BaseAdapter {
             title = itemView.findViewById(R.id.text_setting_title);
             subtitle = itemView.findViewById(R.id.text_setting_subtitle);
             inlineSecurityPanel = itemView.findViewById(R.id.layout_setting_inline_security_panel);
+            securityCurrentPasswordInput = itemView.findViewById(R.id.input_setting_inline_current_password);
             securityPasswordInput = itemView.findViewById(R.id.input_setting_inline_new_password);
+            securityConfirmPasswordInput = itemView.findViewById(R.id.input_setting_inline_confirm_password);
             securitySubmitButton = itemView.findViewById(R.id.button_setting_inline_change_password);
         }
     }
