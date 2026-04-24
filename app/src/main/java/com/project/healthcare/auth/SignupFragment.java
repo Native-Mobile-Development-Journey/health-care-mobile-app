@@ -8,6 +8,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,11 +29,16 @@ public class SignupFragment extends Fragment {
 
     private static final String TAG = "SignupFragment";
     private static final int MIN_PASSWORD_LENGTH = 6;
+    private static final String ROLE_PATIENT = "patient";
+    private static final String ROLE_DOCTOR = "doctor";
 
     private EditText nameInput;
     private EditText emailInput;
     private EditText passwordInput;
     private EditText confirmPasswordInput;
+    private RadioGroup roleGroup;
+    private RadioButton rolePatientRadio;
+    private RadioButton roleDoctorRadio;
     private Button signupButton;
     private TextView switchToLoginText;
     private ProgressBar signupProgress;
@@ -48,6 +55,9 @@ public class SignupFragment extends Fragment {
         emailInput = view.findViewById(R.id.input_signup_email);
         passwordInput = view.findViewById(R.id.input_signup_password);
         confirmPasswordInput = view.findViewById(R.id.input_signup_confirm_password);
+        roleGroup = view.findViewById(R.id.group_signup_role);
+        rolePatientRadio = view.findViewById(R.id.radio_role_patient);
+        roleDoctorRadio = view.findViewById(R.id.radio_role_doctor);
         signupButton = view.findViewById(R.id.button_signup);
         switchToLoginText = view.findViewById(R.id.text_switch_to_login);
         signupProgress = view.findViewById(R.id.progress_signup);
@@ -67,8 +77,9 @@ public class SignupFragment extends Fragment {
         String email = readTrimmedText(emailInput);
         String password = readText(passwordInput);
         String confirmPassword = readText(confirmPasswordInput);
+        String role = readSelectedRole();
 
-        if (!validateInput(name, email, password, confirmPassword)) {
+        if (!validateInput(name, email, password, confirmPassword, role)) {
             return;
         }
 
@@ -81,7 +92,7 @@ public class SignupFragment extends Fragment {
                     }
 
                     if (task.isSuccessful()) {
-                        updateProfileAndContinue(name, email);
+                        updateProfileAndContinue(name, email, role);
                     } else {
                         setLoading(false);
                         String errorMessage = resolveAuthError(task.getException());
@@ -111,10 +122,10 @@ public class SignupFragment extends Fragment {
         return getString(R.string.auth_error_generic);
     }
 
-    private void updateProfileAndContinue(String name, String email) {
+    private void updateProfileAndContinue(String name, String email, String role) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null) {
-            completeSignup(name, email);
+            completeSignup(name, email, role);
             return;
         }
 
@@ -128,14 +139,28 @@ public class SignupFragment extends Fragment {
                     if (!isAdded()) {
                         return;
                     }
-                    completeSignup(name, email);
+                    completeSignup(name, email, role);
                 });
     }
 
-    private void completeSignup(String name, String email) {
+    private void completeSignup(String name, String email, String role) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser != null) {
-            AppRepository.getInstance().createOrUpdateUserProfile(firebaseUser.getUid(), name, email);
+            AppRepository.getInstance().createOrUpdateUserProfile(firebaseUser.getUid(), name, email, role, (success, message) -> {
+                if (!isAdded()) {
+                    return;
+                }
+                setLoading(false);
+                if (success) {
+                    Toast.makeText(requireContext(), R.string.auth_signup_success, Toast.LENGTH_SHORT).show();
+                    if (getActivity() instanceof AuthActivity) {
+                        ((AuthActivity) getActivity()).onAuthSuccess();
+                    }
+                } else {
+                    Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_LONG).show();
+                }
+            });
+            return;
         }
 
         setLoading(false);
@@ -145,7 +170,7 @@ public class SignupFragment extends Fragment {
         }
     }
 
-    private boolean validateInput(String name, String email, String password, String confirmPassword) {
+    private boolean validateInput(String name, String email, String password, String confirmPassword, String role) {
         if (TextUtils.isEmpty(name)) {
             nameInput.setError(getString(R.string.auth_error_name_required));
             nameInput.requestFocus();
@@ -188,6 +213,12 @@ public class SignupFragment extends Fragment {
             return false;
         }
 
+        if (TextUtils.isEmpty(role)) {
+            Toast.makeText(requireContext(), R.string.auth_error_role_required, Toast.LENGTH_SHORT).show();
+            roleGroup.requestFocus();
+            return false;
+        }
+
         return true;
     }
 
@@ -209,6 +240,20 @@ public class SignupFragment extends Fragment {
         emailInput.setEnabled(!loading);
         passwordInput.setEnabled(!loading);
         confirmPasswordInput.setEnabled(!loading);
+        roleGroup.setEnabled(!loading);
+        rolePatientRadio.setEnabled(!loading);
+        roleDoctorRadio.setEnabled(!loading);
         signupProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
+    }
+
+    private String readSelectedRole() {
+        int checkedId = roleGroup.getCheckedRadioButtonId();
+        if (checkedId == R.id.radio_role_doctor) {
+            return ROLE_DOCTOR;
+        }
+        if (checkedId == R.id.radio_role_patient) {
+            return ROLE_PATIENT;
+        }
+        return "";
     }
 }

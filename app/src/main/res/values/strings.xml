@@ -94,6 +94,10 @@
     <string name="auth_password_hint">Enter your password</string>
     <string name="auth_confirm_password_label">Confirm password</string>
     <string name="auth_confirm_password_hint">Confirm your password</string>
+    <string name="auth_role_label">Account type</string>
+    <string name="auth_role_patient">Patient</string>
+    <string name="auth_role_doctor">Doctor</string>
+    <string name="auth_error_role_required">Please select an account type.</string>
     <string name="auth_login_action">Login</string>
     <string name="auth_signup_action">Sign up</string>
     <string name="auth_no_account">Don\'t have an account? Sign up</string>
@@ -110,6 +114,8 @@
     <string name="auth_error_password_min">Password must be at least 6 characters.</string>
     <string name="auth_error_confirm_password_required">Confirm your password.</string>
     <string name="auth_error_confirm_password_mismatch">Passwords do not match.</string>
+    <string name="doctor_dashboard_title">Doctor dashboard</string>
+    <string name="doctor_dashboard_subtitle">Welcome to your doctor dashboard. Manage patients and appointments here.</string>
 
     <string name="content_search">Search</string>
     <string name="content_notification">Notifications</string>

@@ -35,6 +35,12 @@ public class AppRepository {
         void onComplete(boolean success, @Nullable String message);
     }
 
+    public interface RoleCallback {
+        void onRoleLoaded(@Nullable String role);
+
+        void onError(String message);
+    }
+
     private static final String NODE_USERS = "users";
     private static final String NODE_DOCTORS = "doctors";
     private static final String NODE_APPOINTMENTS = "appointments";
@@ -90,11 +96,51 @@ public class AppRepository {
     }
 
     public void createOrUpdateUserProfile(String uid, String name, String email) {
+        createOrUpdateUserProfile(uid, name, email, null, null);
+    }
+
+    public void createOrUpdateUserProfile(String uid, String name, String email, @Nullable String role, @Nullable CompletionCallback callback) {
         Map<String, Object> profile = new HashMap<>();
         profile.put("uid", uid);
         profile.put("name", name);
         profile.put("email", email);
-        usersRef.child(uid).updateChildren(profile);
+        if (role != null) {
+            profile.put("role", role);
+        }
+
+        DatabaseReference userRef = usersRef.child(uid);
+        if (callback == null) {
+            userRef.updateChildren(profile);
+            return;
+        }
+
+        userRef.updateChildren(profile)
+                .addOnSuccessListener(unused -> callback.onComplete(true, null))
+                .addOnFailureListener(e -> callback.onComplete(false, e.getMessage()));
+    }
+
+    public void fetchUserRole(String uid, RoleCallback callback) {
+        usersRef.child(uid).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot == null || !snapshot.exists()) {
+                    callback.onRoleLoaded(null);
+                    return;
+                }
+
+                Object roleValue = snapshot.child("role").getValue();
+                if (roleValue instanceof String) {
+                    callback.onRoleLoaded(((String) roleValue).trim().toLowerCase(Locale.ROOT));
+                } else {
+                    callback.onRoleLoaded(null);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onError(error.getMessage());
+            }
+        });
     }
 
     public ValueEventListener observeDoctors(ListCallback<Doctor> callback) {

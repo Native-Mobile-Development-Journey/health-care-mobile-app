@@ -5,13 +5,16 @@ import android.os.Bundle;
 import android.view.View;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.project.healthcare.MainActivity;
+import com.project.healthcare.DoctorDashboardActivity;
 import com.project.healthcare.R;
+import com.project.healthcare.data.AppRepository;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class AuthActivity extends AppCompatActivity {
@@ -34,7 +37,7 @@ public class AuthActivity extends AppCompatActivity {
         super.onStart();
 
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-            openMainAndFinish();
+            routeUserByRole();
         }
     }
 
@@ -55,7 +58,37 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     public void onAuthSuccess() {
-        openMainAndFinish();
+        routeUserByRole();
+    }
+
+    private void routeUserByRole() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            openMainAndFinish();
+            return;
+        }
+
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        AppRepository.getInstance().fetchUserRole(uid, new AppRepository.RoleCallback() {
+            @Override
+            public void onRoleLoaded(@Nullable String role) {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                if (role != null && role.equals("doctor")) {
+                    openDoctorDashboardAndFinish();
+                } else {
+                    openMainAndFinish();
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                openMainAndFinish();
+            }
+        });
     }
 
     private void showLoginScreen() {
@@ -67,6 +100,13 @@ public class AuthActivity extends AppCompatActivity {
 
     private void openMainAndFinish() {
         Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    private void openDoctorDashboardAndFinish() {
+        Intent intent = new Intent(this, DoctorDashboardActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
