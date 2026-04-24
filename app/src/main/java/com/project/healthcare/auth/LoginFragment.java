@@ -2,6 +2,7 @@ package com.project.healthcare.auth;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
@@ -17,7 +18,11 @@ import androidx.fragment.app.Fragment;
 import com.project.healthcare.R;
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.util.Locale;
+
 public class LoginFragment extends Fragment {
+
+    private static final String TAG = "LoginFragment";
 
     private EditText emailInput;
     private EditText passwordInput;
@@ -73,13 +78,31 @@ public class LoginFragment extends Fragment {
                             ((AuthActivity) getActivity()).onAuthSuccess();
                         }
                     } else {
-                        String errorMessage = getString(R.string.auth_error_generic);
-                        if (task.getException() != null && !TextUtils.isEmpty(task.getException().getLocalizedMessage())) {
-                            errorMessage = task.getException().getLocalizedMessage();
-                        }
+                        String errorMessage = resolveAuthError(task.getException());
                         Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    private String resolveAuthError(@Nullable Exception exception) {
+        if (exception == null) {
+            return getString(R.string.auth_error_generic);
+        }
+
+        Log.e(TAG, "Login failed", exception);
+
+        String localizedMessage = exception.getLocalizedMessage();
+        String normalized = localizedMessage == null ? "" : localizedMessage.toUpperCase(Locale.US);
+
+        if (normalized.contains("CONFIGURATION_NOT_FOUND")) {
+            return getString(R.string.auth_error_firebase_configuration);
+        }
+
+        if (!TextUtils.isEmpty(localizedMessage)) {
+            return localizedMessage;
+        }
+
+        return getString(R.string.auth_error_generic);
     }
 
     private boolean validateInput(String email, String password) {

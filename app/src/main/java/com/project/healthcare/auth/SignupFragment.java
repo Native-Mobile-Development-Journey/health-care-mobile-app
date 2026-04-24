@@ -2,6 +2,7 @@ package com.project.healthcare.auth;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
@@ -19,8 +20,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 
+import java.util.Locale;
+
 public class SignupFragment extends Fragment {
 
+    private static final String TAG = "SignupFragment";
     private static final int MIN_PASSWORD_LENGTH = 6;
 
     private EditText nameInput;
@@ -79,13 +83,31 @@ public class SignupFragment extends Fragment {
                         updateProfileAndContinue(name);
                     } else {
                         setLoading(false);
-                        String errorMessage = getString(R.string.auth_error_generic);
-                        if (task.getException() != null && !TextUtils.isEmpty(task.getException().getLocalizedMessage())) {
-                            errorMessage = task.getException().getLocalizedMessage();
-                        }
+                        String errorMessage = resolveAuthError(task.getException());
                         Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    private String resolveAuthError(@Nullable Exception exception) {
+        if (exception == null) {
+            return getString(R.string.auth_error_generic);
+        }
+
+        Log.e(TAG, "Signup failed", exception);
+
+        String localizedMessage = exception.getLocalizedMessage();
+        String normalized = localizedMessage == null ? "" : localizedMessage.toUpperCase(Locale.US);
+
+        if (normalized.contains("CONFIGURATION_NOT_FOUND")) {
+            return getString(R.string.auth_error_firebase_configuration);
+        }
+
+        if (!TextUtils.isEmpty(localizedMessage)) {
+            return localizedMessage;
+        }
+
+        return getString(R.string.auth_error_generic);
     }
 
     private void updateProfileAndContinue(String name) {

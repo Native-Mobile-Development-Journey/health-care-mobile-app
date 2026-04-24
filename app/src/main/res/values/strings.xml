@@ -93,6 +93,7 @@
     <string name="auth_login_success">Logged in successfully</string>
     <string name="auth_signup_success">Account created successfully</string>
     <string name="auth_error_generic">Something went wrong. Please try again.</string>
+    <string name="auth_error_firebase_configuration">Authentication is not configured correctly. Verify Firebase Auth setup, SHA fingerprints, and google-services.json.</string>
     <string name="auth_error_name_required">Name is required.</string>
     <string name="auth_error_email_required">Email is required.</string>
     <string name="auth_error_email_invalid">Enter a valid email.</string>
