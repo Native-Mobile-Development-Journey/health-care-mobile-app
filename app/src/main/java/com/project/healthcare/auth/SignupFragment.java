@@ -92,7 +92,10 @@ public class SignupFragment extends Fragment {
                     }
 
                     if (task.isSuccessful()) {
-                        updateProfileAndContinue(name, email, role);
+                        FirebaseUser firebaseUser = task.getResult() != null
+                                ? task.getResult().getUser()
+                                : FirebaseAuth.getInstance().getCurrentUser();
+                        updateProfileAndContinue(firebaseUser, name, email, role);
                     } else {
                         setLoading(false);
                         String errorMessage = resolveAuthError(task.getException());
@@ -122,10 +125,10 @@ public class SignupFragment extends Fragment {
         return getString(R.string.auth_error_generic);
     }
 
-    private void updateProfileAndContinue(String name, String email, String role) {
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+    private void updateProfileAndContinue(@Nullable FirebaseUser firebaseUser, String name, String email, String role) {
         if (firebaseUser == null) {
-            completeSignup(name, email, role);
+            setLoading(false);
+            Toast.makeText(requireContext(), getString(R.string.auth_error_generic), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -139,35 +142,25 @@ public class SignupFragment extends Fragment {
                     if (!isAdded()) {
                         return;
                     }
-                    completeSignup(name, email, role);
+                    completeSignup(firebaseUser, name, email, role);
                 });
     }
 
-    private void completeSignup(String name, String email, String role) {
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser != null) {
-            AppRepository.getInstance().createOrUpdateUserProfile(firebaseUser.getUid(), name, email, role, (success, message) -> {
-                if (!isAdded()) {
-                    return;
+    private void completeSignup(FirebaseUser firebaseUser, String name, String email, String role) {
+        AppRepository.getInstance().createOrUpdateUserProfile(firebaseUser.getUid(), name, email, role, (success, message) -> {
+            if (!isAdded()) {
+                return;
+            }
+            setLoading(false);
+            if (success) {
+                Toast.makeText(requireContext(), R.string.auth_signup_success, Toast.LENGTH_SHORT).show();
+                if (getActivity() instanceof AuthActivity) {
+                    ((AuthActivity) getActivity()).onAuthSuccess();
                 }
-                setLoading(false);
-                if (success) {
-                    Toast.makeText(requireContext(), R.string.auth_signup_success, Toast.LENGTH_SHORT).show();
-                    if (getActivity() instanceof AuthActivity) {
-                        ((AuthActivity) getActivity()).onAuthSuccess();
-                    }
-                } else {
-                    Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_LONG).show();
-                }
-            });
-            return;
-        }
-
-        setLoading(false);
-        Toast.makeText(requireContext(), R.string.auth_signup_success, Toast.LENGTH_SHORT).show();
-        if (getActivity() instanceof AuthActivity) {
-            ((AuthActivity) getActivity()).onAuthSuccess();
-        }
+            } else {
+                Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private boolean validateInput(String name, String email, String password, String confirmPassword, String role) {
