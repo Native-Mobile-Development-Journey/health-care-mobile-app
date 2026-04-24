@@ -61,6 +61,10 @@ public class AuthActivity extends AppCompatActivity {
         routeUserByRole();
     }
 
+    public static boolean isDoctorRole(@Nullable String role) {
+        return role != null && "doctor".equalsIgnoreCase(role.trim());
+    }
+
     private void routeUserByRole() {
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             openMainAndFinish();
@@ -74,7 +78,7 @@ public class AuthActivity extends AppCompatActivity {
                 if (isFinishing() || isDestroyed()) {
                     return;
                 }
-                if (role != null && role.equals("doctor")) {
+                if (isDoctorRole(role)) {
                     openDoctorDashboardAndFinish();
                 } else {
                     openMainAndFinish();

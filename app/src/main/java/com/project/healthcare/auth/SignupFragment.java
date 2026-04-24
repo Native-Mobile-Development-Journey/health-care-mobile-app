@@ -142,25 +142,28 @@ public class SignupFragment extends Fragment {
                     if (!isAdded()) {
                         return;
                     }
-                    completeSignup(firebaseUser, name, email, role);
+                    saveUserProfileAsync(firebaseUser.getUid(), name, email, role);
+                    completeSignup();
                 });
     }
 
-    private void completeSignup(FirebaseUser firebaseUser, String name, String email, String role) {
-        AppRepository.getInstance().createOrUpdateUserProfile(firebaseUser.getUid(), name, email, role, (success, message) -> {
+    private void saveUserProfileAsync(String uid, String name, String email, String role) {
+        AppRepository.getInstance().createOrUpdateUserProfile(uid, name, email, role, (success, message) -> {
             if (!isAdded()) {
                 return;
             }
-            setLoading(false);
-            if (success) {
-                Toast.makeText(requireContext(), R.string.auth_signup_success, Toast.LENGTH_SHORT).show();
-                if (getActivity() instanceof AuthActivity) {
-                    ((AuthActivity) getActivity()).onAuthSuccess();
-                }
-            } else {
+            if (!success) {
                 Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void completeSignup() {
+        setLoading(false);
+        Toast.makeText(requireContext(), R.string.auth_signup_success, Toast.LENGTH_SHORT).show();
+        if (getActivity() instanceof AuthActivity) {
+            ((AuthActivity) getActivity()).onAuthSuccess();
+        }
     }
 
     private boolean validateInput(String name, String email, String password, String confirmPassword, String role) {

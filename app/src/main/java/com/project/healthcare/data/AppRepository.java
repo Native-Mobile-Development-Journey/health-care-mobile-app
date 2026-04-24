@@ -100,13 +100,7 @@ public class AppRepository {
     }
 
     public void createOrUpdateUserProfile(String uid, String name, String email, @Nullable String role, @Nullable CompletionCallback callback) {
-        Map<String, Object> profile = new HashMap<>();
-        profile.put("uid", uid);
-        profile.put("name", name);
-        profile.put("email", email);
-        if (role != null) {
-            profile.put("role", role);
-        }
+        Map<String, Object> profile = UserProfileDataUtil.buildProfile(uid, name, email, role);
 
         DatabaseReference userRef = usersRef.child(uid);
         if (callback == null) {
@@ -123,17 +117,7 @@ public class AppRepository {
         usersRef.child(uid).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot == null || !snapshot.exists()) {
-                    callback.onRoleLoaded(null);
-                    return;
-                }
-
-                Object roleValue = snapshot.child("role").getValue();
-                if (roleValue instanceof String) {
-                    callback.onRoleLoaded(((String) roleValue).trim().toLowerCase(Locale.ROOT));
-                } else {
-                    callback.onRoleLoaded(null);
-                }
+                callback.onRoleLoaded(UserProfileDataUtil.parseRoleFromSnapshot(snapshot));
             }
 
             @Override
