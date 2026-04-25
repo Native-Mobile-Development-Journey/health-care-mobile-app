@@ -10,6 +10,8 @@ import com.project.healthcare.data.models.DoctorAvailabilitySlot;
 import com.project.healthcare.data.models.Message;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -18,7 +20,9 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.functions.FirebaseFunctions;
 import com.google.firebase.functions.HttpsCallableResult;
 
@@ -303,6 +307,48 @@ public class AppRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
+    public void fetchDoctorProfileFromFirestoreUsers(String doctorId, DoctorCallback callback) {
+        if (doctorId == null) {
+            callback.onDoctorLoaded(null);
+            return;
+        }
+        firestore.collection("users")
+                .document(doctorId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document == null || !document.exists()) {
+                        callback.onDoctorLoaded(null);
+                        return;
+                    }
+                    String role = document.getString("role");
+                    if (role == null || !role.equalsIgnoreCase("doctor")) {
+                        callback.onDoctorLoaded(null);
+                        return;
+                    }
+                    Doctor doctor = new Doctor();
+                    doctor.id = document.getId();
+                    doctor.name = document.getString("name");
+                    if (doctor.name == null || doctor.name.isEmpty()) {
+                        doctor.name = document.getString("email");
+                    }
+                    doctor.specialty = document.getString("specialty");
+                    doctor.hospital = document.getString("hospital");
+                    doctor.bio = document.getString("bio");
+                    doctor.photoUrl = document.getString("photoUrl");
+                    doctor.consultationFee = document.getString("consultationFee");
+                    doctor.address = document.getString("address");
+                    doctor.languages = document.getString("languages");
+                    doctor.qualification = document.getString("qualification");
+                    doctor.experienceYears = document.contains("experienceYears") ? document.getLong("experienceYears").intValue() : 0;
+                    doctor.patientCount = document.contains("patientCount") ? document.getLong("patientCount").intValue() : 0;
+                    doctor.rating = document.contains("rating") ? document.getDouble("rating") : 0.0;
+                    doctor.ratingCount = document.contains("ratingCount") ? document.getLong("ratingCount").intValue() : 0;
+                    doctor.isAvailable = document.contains("isAvailable") ? document.getBoolean("isAvailable") : false;
+                    callback.onDoctorLoaded(doctor);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
     public void saveDoctorAvailabilitySlot(String doctorId, DoctorAvailabilitySlot slot, @Nullable CompletionCallback callback) {
         if (doctorId == null || slot == null) {
             if (callback != null) {
@@ -313,12 +359,39 @@ public class AppRepository {
 
         String slotId = slot.id != null && !slot.id.trim().isEmpty() ? slot.id : firestore.collection(DOCS_COLLECTION).document(doctorId).collection(AVAILABILITY_COLLECTION).document().getId();
         slot.id = slotId;
-        DocumentReference document = firestore.collection(DOCS_COLLECTION)
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("id", slot.id);
+        payload.put("dayOfWeek", slot.dayOfWeek != null ? slot.dayOfWeek : slot.dayLabel);
+        payload.put("dayLabel", slot.dayLabel);
+        payload.put("startTime", slot.startTime);
+        payload.put("endTime", slot.endTime);
+        payload.put("durationMinutes", slot.durationMinutes);
+        payload.put("isActive", slot.isActive);
+
+        DocumentReference doctorDoc = firestore.collection(DOCS_COLLECTION)
+                .document(doctorId)
+                .collection(AVAILABILITY_COLLECTION)
+                .document(slotId);
+        DocumentReference userDoc = firestore.collection("users")
                 .document(doctorId)
                 .collection(AVAILABILITY_COLLECTION)
                 .document(slotId);
 
-        document.set(slot)
+        Map<String, Object> fieldUpdate = new HashMap<>();
+        String fieldPath = buildAvailabilityFieldPath(slot.dayLabel, slot.id);
+        fieldUpdate.put(fieldPath, payload);
+
+        Task<Void> doctorTask = doctorDoc.set(payload);
+        Task<Void> userTask = userDoc.set(payload);
+        Task<Void> doctorFieldTask = firestore.collection(DOCS_COLLECTION)
+                .document(doctorId)
+                .set(fieldUpdate, SetOptions.merge());
+        Task<Void> userFieldTask = firestore.collection("users")
+                .document(doctorId)
+                .set(fieldUpdate, SetOptions.merge());
+
+        Tasks.whenAll(doctorTask, userTask, doctorFieldTask, userFieldTask)
                 .addOnSuccessListener(unused -> {
                     if (callback != null) {
                         callback.onComplete(true, null);
@@ -331,19 +404,40 @@ public class AppRepository {
                 });
     }
 
-    public void deleteDoctorAvailabilitySlot(String doctorId, String slotId, @Nullable CompletionCallback callback) {
-        if (doctorId == null || slotId == null) {
+    public void deleteDoctorAvailabilitySlot(String doctorId, DoctorAvailabilitySlot slot, @Nullable CompletionCallback callback) {
+        if (doctorId == null || slot == null || slot.id == null) {
             if (callback != null) {
                 callback.onComplete(false, "Invalid slot reference");
             }
             return;
         }
 
-        firestore.collection(DOCS_COLLECTION)
+        Task<Void> doctorTask = firestore.collection(DOCS_COLLECTION)
                 .document(doctorId)
                 .collection(AVAILABILITY_COLLECTION)
-                .document(slotId)
-                .delete()
+                .document(slot.id)
+                .delete();
+
+        Task<Void> userTask = firestore.collection("users")
+                .document(doctorId)
+                .collection(AVAILABILITY_COLLECTION)
+                .document(slot.id)
+                .delete();
+
+        String fieldPath = buildAvailabilityFieldPath(slot.dayLabel, slot.id);
+        Map<String, Object> fieldDelete = new HashMap<>();
+        if (fieldPath != null) {
+            fieldDelete.put(fieldPath, FieldValue.delete());
+        }
+
+        Task<Void> doctorFieldTask = firestore.collection(DOCS_COLLECTION)
+                .document(doctorId)
+                .set(fieldDelete, SetOptions.merge());
+        Task<Void> userFieldTask = firestore.collection("users")
+                .document(doctorId)
+                .set(fieldDelete, SetOptions.merge());
+
+        Tasks.whenAll(doctorTask, userTask, doctorFieldTask, userFieldTask)
                 .addOnSuccessListener(unused -> {
                     if (callback != null) {
                         callback.onComplete(true, null);
@@ -357,6 +451,11 @@ public class AppRepository {
     }
 
     public void getDoctorAvailability(String doctorId, ListCallback<DoctorAvailabilitySlot> callback) {
+        if (doctorId == null) {
+            callback.onData(new ArrayList<>());
+            return;
+        }
+
         firestore.collection(DOCS_COLLECTION)
                 .document(doctorId)
                 .collection(AVAILABILITY_COLLECTION)
@@ -370,9 +469,125 @@ public class AppRepository {
                             slots.add(slot);
                         }
                     });
+                    if (slots.isEmpty()) {
+                        fetchDoctorAvailabilityFromUserDoc(doctorId, callback);
+                    } else {
+                        callback.onData(slots);
+                    }
+                })
+                .addOnFailureListener(e -> fetchDoctorAvailabilityFromUserDoc(doctorId, callback));
+    }
+
+    private void fetchDoctorAvailabilityFromUserDoc(String doctorId, ListCallback<DoctorAvailabilitySlot> callback) {
+        firestore.collection("users")
+                .document(doctorId)
+                .collection(AVAILABILITY_COLLECTION)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<DoctorAvailabilitySlot> slots = new ArrayList<>();
+                    querySnapshot.getDocuments().forEach(document -> {
+                        DoctorAvailabilitySlot slot = document.toObject(DoctorAvailabilitySlot.class);
+                        if (slot != null) {
+                            slot.id = document.getId();
+                            slots.add(slot);
+                        }
+                    });
+                    if (slots.isEmpty()) {
+                        fetchDoctorAvailabilityFromFieldMaps(doctorId, callback);
+                    } else {
+                        callback.onData(slots);
+                    }
+                })
+                .addOnFailureListener(e -> fetchDoctorAvailabilityFromFieldMaps(doctorId, callback));
+    }
+
+    private void fetchDoctorAvailabilityFromFieldMaps(String doctorId, ListCallback<DoctorAvailabilitySlot> callback) {
+        firestore.collection("users")
+                .document(doctorId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document == null || !document.exists()) {
+                        fetchDoctorAvailabilityFromFieldMapsInDoctorDoc(doctorId, callback);
+                        return;
+                    }
+                    Object availabilityObj = document.get("availability");
+                    if (!(availabilityObj instanceof Map)) {
+                        fetchDoctorAvailabilityFromFieldMapsInDoctorDoc(doctorId, callback);
+                        return;
+                    }
+                    List<DoctorAvailabilitySlot> slots = parseAvailabilityFieldMap((Map<String, Object>) availabilityObj);
+                    if (slots.isEmpty()) {
+                        fetchDoctorAvailabilityFromFieldMapsInDoctorDoc(doctorId, callback);
+                    } else {
+                        callback.onData(slots);
+                    }
+                })
+                .addOnFailureListener(e -> fetchDoctorAvailabilityFromFieldMapsInDoctorDoc(doctorId, callback));
+    }
+
+    private void fetchDoctorAvailabilityFromFieldMapsInDoctorDoc(String doctorId, ListCallback<DoctorAvailabilitySlot> callback) {
+        firestore.collection(DOCS_COLLECTION)
+                .document(doctorId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document == null || !document.exists()) {
+                        callback.onData(new ArrayList<>());
+                        return;
+                    }
+                    Object availabilityObj = document.get("availability");
+                    if (!(availabilityObj instanceof Map)) {
+                        callback.onData(new ArrayList<>());
+                        return;
+                    }
+                    List<DoctorAvailabilitySlot> slots = parseAvailabilityFieldMap((Map<String, Object>) availabilityObj);
                     callback.onData(slots);
                 })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnFailureListener(e -> callback.onData(new ArrayList<>()));
+    }
+
+    private List<DoctorAvailabilitySlot> parseAvailabilityFieldMap(Map<String, Object> availability) {
+        List<DoctorAvailabilitySlot> slots = new ArrayList<>();
+        for (Map.Entry<String, Object> dayEntry : availability.entrySet()) {
+            String dayLabel = dayEntry.getKey();
+            Object dayValue = dayEntry.getValue();
+            if (!(dayValue instanceof Map)) {
+                continue;
+            }
+            Map<String, Object> dayMap = (Map<String, Object>) dayValue;
+            for (Map.Entry<String, Object> slotEntry : dayMap.entrySet()) {
+                String slotId = slotEntry.getKey();
+                Object slotObj = slotEntry.getValue();
+                if (!(slotObj instanceof Map)) {
+                    continue;
+                }
+                Map<String, Object> slotMap = (Map<String, Object>) slotObj;
+                DoctorAvailabilitySlot slot = new DoctorAvailabilitySlot();
+                slot.id = slotId;
+                slot.dayLabel = dayLabel;
+                slot.dayOfWeek = dayLabel;
+                slot.startTime = slotMap.containsKey("startTime") ? String.valueOf(slotMap.get("startTime")) : null;
+                slot.endTime = slotMap.containsKey("endTime") ? String.valueOf(slotMap.get("endTime")) : null;
+                slot.durationMinutes = slotMap.containsKey("durationMinutes") ? ((Number) slotMap.get("durationMinutes")).intValue() : 60;
+                slot.isActive = slotMap.containsKey("isActive") ? Boolean.TRUE.equals(slotMap.get("isActive")) : true;
+                slots.add(slot);
+            }
+        }
+        return slots;
+    }
+
+    private String normalizeDayLabel(String dayLabel) {
+        if (dayLabel == null) {
+            return "";
+        }
+        return dayLabel.trim().toLowerCase(Locale.ROOT).replace(" ", "_");
+    }
+
+    private String buildAvailabilityFieldPath(String dayLabel, String slotId) {
+        if (dayLabel == null || slotId == null) {
+            return null;
+        }
+        String normalizedDay = normalizeDayLabel(dayLabel);
+        return "availability." + normalizedDay + "." + slotId;
     }
 
     public void getDoctorAppointments(String doctorId, ListCallback<Appointment> callback) {

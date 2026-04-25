@@ -1,6 +1,7 @@
 package com.project.healthcare.fragments;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,6 +40,7 @@ public class DoctorDetailFragment extends Fragment {
     private TimeOptionAdapter timeOptionAdapter;
     private ValueEventListener doctorsListener;
 
+    private static final String TAG = "DoctorDetailFragment";
     private final List<DoctorAvailabilitySlot> availabilitySlots = new ArrayList<>();
     private String doctorId;
     private String appointmentId;
@@ -50,6 +52,7 @@ public class DoctorDetailFragment extends Fragment {
     private TextView patientsText;
     private TextView ratingText;
     private TextView aboutText;
+    private TextView scheduleEmptyText;
 
     public DoctorDetailFragment() {
         super(R.layout.fragment_doctor_detail);
@@ -83,6 +86,7 @@ public class DoctorDetailFragment extends Fragment {
         patientsText = view.findViewById(R.id.text_stat_patients_value);
         ratingText = view.findViewById(R.id.text_stat_rating_value);
         aboutText = view.findViewById(R.id.text_about_doctor);
+        scheduleEmptyText = view.findViewById(R.id.text_schedule_empty);
 
         setupDateRecycler(view);
         setupTimeRecycler(view);
@@ -93,6 +97,9 @@ public class DoctorDetailFragment extends Fragment {
             backButton.setOnClickListener(v -> requireActivity().getOnBackPressedDispatcher().onBackPressed());
         }
 
+        if (doctorId != null) {
+            loadDoctorAvailability(doctorId);
+        }
         observeDoctors();
     }
 
@@ -134,13 +141,41 @@ public class DoctorDetailFragment extends Fragment {
         doctorsListener = repository.observeDoctors(new AppRepository.ListCallback<Doctor>() {
             @Override
             public void onData(List<Doctor> items) {
-                if (items.isEmpty()) {
+                Log.d(TAG, "observeDoctors loaded count=" + items.size() + " doctorId=" + doctorId);
+                Doctor doctor = repository.findDoctorById(items, doctorId);
+                if (doctor != null) {
+                    selectedDoctor = doctor;
+                    bindDoctor(doctor);
                     return;
                 }
+                // Always try to load availability even when the doctor profile is not available
+                loadDoctorAvailability(doctorId);
+                fetchDoctorFromFirestoreUsers();
+            }
 
-                Doctor doctor = repository.findDoctorById(items, doctorId);
+            @Override
+            public void onError(String message) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                }
+                loadDoctorAvailability(doctorId);
+                fetchDoctorFromFirestoreUsers();
+            }
+        });
+    }
+
+    private void fetchDoctorFromFirestoreUsers() {
+        if (doctorId == null) {
+            return;
+        }
+        repository.fetchDoctorProfileFromFirestoreUsers(doctorId, new AppRepository.DoctorCallback() {
+            @Override
+            public void onDoctorLoaded(@Nullable Doctor doctor) {
                 if (doctor == null) {
-                    doctor = items.get(0);
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "Doctor profile not found", Toast.LENGTH_SHORT).show();
+                    }
+                    return;
                 }
                 selectedDoctor = doctor;
                 bindDoctor(doctor);
@@ -207,11 +242,13 @@ public class DoctorDetailFragment extends Fragment {
         }
 
         if (dayOptions.isEmpty()) {
+            scheduleEmptyText.setVisibility(View.VISIBLE);
             dateOptionAdapter.submitList(new ArrayList<>());
             timeOptionAdapter.submitList(new ArrayList<>());
             return;
         }
 
+        scheduleEmptyText.setVisibility(View.GONE);
         dateOptionAdapter.submitList(dayOptions);
         updateTimeOptionsForSelectedDay();
     }

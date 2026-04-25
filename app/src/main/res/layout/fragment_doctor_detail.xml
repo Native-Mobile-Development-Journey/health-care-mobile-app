@@ -217,6 +217,15 @@
                     android:layout_height="wrap_content"
                     android:text="@string/date_title" />
 
+                <TextView
+                    android:id="@+id/text_schedule_empty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:text="No schedule is available yet"
+                    android:textColor="@color/neutral_500"
+                    android:visibility="gone" />
+
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recycler_detail_dates"
                     android:layout_width="match_parent"

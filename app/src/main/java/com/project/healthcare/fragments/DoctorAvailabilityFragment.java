@@ -170,7 +170,7 @@ public class DoctorAvailabilityFragment extends Fragment implements Availability
             return;
         }
 
-        AppRepository.getInstance().deleteDoctorAvailabilitySlot(doctorId, slot.id, (success, message) -> {
+        AppRepository.getInstance().deleteDoctorAvailabilitySlot(doctorId, slot, (success, message) -> {
             if (!isAdded()) {
                 return;
             }
