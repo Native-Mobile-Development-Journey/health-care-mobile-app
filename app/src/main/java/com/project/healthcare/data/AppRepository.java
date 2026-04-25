@@ -268,7 +268,6 @@ public class AppRepository {
                         }
                         doctors.add(doctor);
                     });
-                    Collections.shuffle(doctors);
                     callback.onData(doctors);
                 })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));

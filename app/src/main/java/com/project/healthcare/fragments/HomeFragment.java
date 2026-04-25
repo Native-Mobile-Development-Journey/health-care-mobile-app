@@ -234,16 +234,9 @@ public class HomeFragment extends Fragment {
     private void populateDoctorRecommendations(List<Doctor> items) {
         allDoctors.clear();
         allDoctors.addAll(items);
-        allDoctors.sort((a, b) -> Double.compare(b.rating, a.rating));
 
         recommendedDoctors.clear();
-        for (int i = 0; i < Math.min(MAX_RECOMMENDED_DOCTORS, allDoctors.size()); i++) {
-            recommendedDoctors.add(allDoctors.get(i));
-        }
-
-        if (recommendedDoctors.isEmpty() && !allDoctors.isEmpty()) {
-            recommendedDoctors.addAll(allDoctors);
-        }
+        recommendedDoctors.addAll(allDoctors);
 
         applyDoctorFilter("");
         bindScheduleCard();
