@@ -67,6 +67,7 @@
     <string name="schedule_selection_required">Please select date and time first.</string>
     <string name="schedule_confirm_success">Appointment saved successfully.</string>
     <string name="schedule_confirming">Confirming schedule...</string>
+    <string name="schedule_conflict_error">You already have an appointment at this date and time.</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="delete_appointment_title">Delete appointment?</string>

@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.project.healthcare.R;
 import com.project.healthcare.data.AppRepository;
+import com.project.healthcare.data.models.Appointment;
 import com.project.healthcare.data.models.Doctor;
 import com.project.healthcare.data.models.DoctorAvailabilitySlot;
 import com.project.healthcare.ui.adapter.DateOptionAdapter;
@@ -282,44 +283,54 @@ public class DoctorDetailFragment extends Fragment {
             String selectedDate = dateOption.dayLabel + ", " + dateOption.dateLabel;
             String selectedTime = timeOption.label;
 
-            if (appointmentId != null && !appointmentId.trim().isEmpty()) {
-                repository.rescheduleAppointment(appointmentId, selectedDate, selectedTime, this::handleCompletion);
-                return;
-            }
-
-            if (selectedDoctor != null) {
-                repository.createAppointment(selectedDoctor, selectedDate, selectedTime, this::handleCompletion);
-                return;
-            }
-
-            if (doctorId == null) {
-                Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            Toast.makeText(requireContext(), R.string.schedule_confirming, Toast.LENGTH_SHORT).show();
-            repository.fetchDoctorProfileFromFirestoreUsers(doctorId, new AppRepository.DoctorCallback() {
-                @Override
-                public void onDoctorLoaded(@Nullable Doctor doctor) {
-                    if (!isAdded()) {
-                        return;
-                    }
-                    if (doctor == null) {
-                        Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    selectedDoctor = doctor;
-                    bindDoctor(doctor);
-                    repository.createAppointment(doctor, selectedDate, selectedTime, DoctorDetailFragment.this::handleCompletion);
+            validatePatientConflict(selectedDate, selectedTime, appointmentId, hasConflict -> {
+                if (!isAdded()) {
+                    return;
+                }
+                if (hasConflict) {
+                    Toast.makeText(requireContext(), R.string.schedule_conflict_error, Toast.LENGTH_LONG).show();
+                    return;
                 }
 
-                @Override
-                public void onError(String message) {
-                    if (!isAdded()) {
-                        return;
-                    }
-                    Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+                if (appointmentId != null && !appointmentId.trim().isEmpty()) {
+                    repository.rescheduleAppointment(appointmentId, selectedDate, selectedTime, this::handleCompletion);
+                    return;
                 }
+
+                if (selectedDoctor != null) {
+                    repository.createAppointment(selectedDoctor, selectedDate, selectedTime, this::handleCompletion);
+                    return;
+                }
+
+                if (doctorId == null) {
+                    Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Toast.makeText(requireContext(), R.string.schedule_confirming, Toast.LENGTH_SHORT).show();
+                repository.fetchDoctorProfileFromFirestoreUsers(doctorId, new AppRepository.DoctorCallback() {
+                    @Override
+                    public void onDoctorLoaded(@Nullable Doctor doctor) {
+                        if (!isAdded()) {
+                            return;
+                        }
+                        if (doctor == null) {
+                            Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        selectedDoctor = doctor;
+                        bindDoctor(doctor);
+                        repository.createAppointment(doctor, selectedDate, selectedTime, DoctorDetailFragment.this::handleCompletion);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        if (!isAdded()) {
+                            return;
+                        }
+                        Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+                    }
+                });
             });
         });
     }
@@ -343,6 +354,46 @@ public class DoctorDetailFragment extends Fragment {
     private boolean isCurrentUserDoctor() {
         String uid = repository.getCurrentUserUid();
         return uid != null && uid.equals(doctorId);
+    }
+
+    private interface ConflictCallback {
+        void onCheckComplete(boolean hasConflict);
+    }
+
+    private void validatePatientConflict(String date, String time, @Nullable String currentAppointmentId, ConflictCallback callback) {
+        String patientUid = repository.getCurrentUserUid();
+        if (patientUid == null) {
+            callback.onCheckComplete(false);
+            return;
+        }
+
+        repository.getPatientAppointments(patientUid, new AppRepository.ListCallback<Appointment>() {
+            @Override
+            public void onData(List<Appointment> items) {
+                boolean conflict = false;
+                for (Appointment appointment : items) {
+                    if (appointment == null || appointment.id == null) {
+                        continue;
+                    }
+                    if (currentAppointmentId != null && currentAppointmentId.equals(appointment.id)) {
+                        continue;
+                    }
+                    if (Appointment.STATUS_CANCELED.equalsIgnoreCase(appointment.normalizedStatus())) {
+                        continue;
+                    }
+                    if (date.equals(appointment.date) && time.equals(appointment.time)) {
+                        conflict = true;
+                        break;
+                    }
+                }
+                callback.onCheckComplete(conflict);
+            }
+
+            @Override
+            public void onError(String message) {
+                callback.onCheckComplete(false);
+            }
+        });
     }
 
     @Override
