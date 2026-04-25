@@ -628,6 +628,32 @@ public class AppRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
+    public void deleteAppointment(String appointmentId, @Nullable CompletionCallback callback) {
+        if (appointmentId == null || appointmentId.trim().isEmpty()) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid appointment reference");
+            }
+            return;
+        }
+
+        Task<Void> rtdbTask = appointmentsRef.child(appointmentId).removeValue();
+        Task<Void> firestoreTask = firestore.collection(APPOINTMENTS_COLLECTION)
+                .document(appointmentId)
+                .delete();
+
+        Tasks.whenAll(rtdbTask, firestoreTask)
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
+    }
+
     public void saveDoctorPatientReference(String doctorId, String patientUid, String patientName, String lastAppointmentDate, String status, @Nullable CompletionCallback callback) {
         if (doctorId == null || patientUid == null) {
             if (callback != null) {

@@ -77,4 +77,41 @@ public class DoctorAppointmentsFragment extends Fragment implements AppointmentA
             Toast.makeText(requireContext(), "Action on " + appointment.status, Toast.LENGTH_SHORT).show();
         }
     }
+
+    @Override
+    public void onAppointmentDelete(Appointment appointment) {
+        if (!isAdded() || appointment == null) {
+            return;
+        }
+        showDeleteConfirmation(appointment);
+    }
+
+    private void showDeleteConfirmation(Appointment appointment) {
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.delete_appointment_title)
+                .setMessage(R.string.delete_appointment_message)
+                .setNegativeButton(R.string.cancel, (d, which) -> d.dismiss())
+                .setPositiveButton(R.string.delete, (d, which) -> AppRepository.getInstance().deleteAppointment(appointment.id, (success, message) -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    if (success) {
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), R.string.delete_appointment_success, Toast.LENGTH_SHORT).show();
+                            loadAppointments();
+                        });
+                        return;
+                    }
+                    requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show());
+                }))
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
+                    .setTextColor(requireContext().getColor(R.color.primary_500));
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                    .setTextColor(requireContext().getColor(R.color.red_500));
+        });
+        dialog.show();
+    }
 }

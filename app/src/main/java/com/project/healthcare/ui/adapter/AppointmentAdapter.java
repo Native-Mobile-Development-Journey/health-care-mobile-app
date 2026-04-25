@@ -21,6 +21,8 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         void onAppointmentOpen(Appointment appointment);
 
         void onAppointmentAction(Appointment appointment);
+
+        void onAppointmentDelete(Appointment appointment);
     }
 
     private final List<Appointment> items = new ArrayList<>();
@@ -75,6 +77,10 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         }
 
         holder.root.setOnClickListener(v -> listener.onAppointmentOpen(item));
+        holder.root.setOnLongClickListener(v -> {
+            listener.onAppointmentDelete(item);
+            return true;
+        });
         holder.actionButton.setOnClickListener(v -> listener.onAppointmentAction(item));
     }
 

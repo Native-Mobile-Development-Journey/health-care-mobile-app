@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class ScheduleFragment extends Fragment {
+public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnAppointmentInteractionListener {
 
     private final AppRepository repository = AppRepository.getInstance();
     private final List<Appointment> allAppointments = new ArrayList<>();
@@ -63,23 +63,7 @@ public class ScheduleFragment extends Fragment {
     private void setupRecycler(View root) {
         RecyclerView recyclerView = root.findViewById(R.id.recycler_schedule_appointments);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        appointmentAdapter = new AppointmentAdapter(new AppointmentAdapter.OnAppointmentInteractionListener() {
-            @Override
-            public void onAppointmentOpen(Appointment appointment) {
-                openDoctorDetail(appointment.doctorId, appointment.id);
-            }
-
-            @Override
-            public void onAppointmentAction(Appointment appointment) {
-                String status = appointment.normalizedStatus();
-                if (Appointment.STATUS_UPCOMING.equals(status)) {
-                    openDoctorDetail(appointment.doctorId, appointment.id);
-                } else {
-                    Toast.makeText(requireContext(), R.string.schedule_action_new_appointment, Toast.LENGTH_SHORT).show();
-                    openDoctorDetail(appointment.doctorId, null);
-                }
-            }
-        }, false);
+        appointmentAdapter = new AppointmentAdapter(this, false);
         recyclerView.setAdapter(appointmentAdapter);
     }
 
@@ -193,6 +177,59 @@ public class ScheduleFragment extends Fragment {
             return false;
         }
         return value.toLowerCase(Locale.ROOT).contains(query);
+    }
+
+    @Override
+    public void onAppointmentOpen(Appointment appointment) {
+        openDoctorDetail(appointment.doctorId, appointment.id);
+    }
+
+    @Override
+    public void onAppointmentAction(Appointment appointment) {
+        String status = appointment.normalizedStatus();
+        if (Appointment.STATUS_UPCOMING.equals(status)) {
+            openDoctorDetail(appointment.doctorId, appointment.id);
+        } else {
+            Toast.makeText(requireContext(), R.string.schedule_action_new_appointment, Toast.LENGTH_SHORT).show();
+            openDoctorDetail(appointment.doctorId, null);
+        }
+    }
+
+    @Override
+    public void onAppointmentDelete(Appointment appointment) {
+        if (!isAdded() || appointment == null) {
+            return;
+        }
+        showDeleteConfirmation(appointment);
+    }
+
+    private void showDeleteConfirmation(Appointment appointment) {
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.delete_appointment_title)
+                .setMessage(R.string.delete_appointment_message)
+                .setNegativeButton(R.string.cancel, (d, which) -> d.dismiss())
+                .setPositiveButton(R.string.delete, (d, which) -> repository.deleteAppointment(appointment.id, (success, message) -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    if (success) {
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), R.string.delete_appointment_success, Toast.LENGTH_SHORT).show();
+                            observeAppointments();
+                        });
+                        return;
+                    }
+                    requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show());
+                }))
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
+                    .setTextColor(requireContext().getColor(R.color.primary_500));
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                    .setTextColor(requireContext().getColor(R.color.red_500));
+        });
+        dialog.show();
     }
 
     private void openDoctorDetail(@Nullable String doctorId, @Nullable String appointmentId) {

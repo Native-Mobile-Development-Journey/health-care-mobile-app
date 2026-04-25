@@ -67,6 +67,11 @@
     <string name="schedule_selection_required">Please select date and time first.</string>
     <string name="schedule_confirm_success">Appointment saved successfully.</string>
     <string name="schedule_confirming">Confirming schedule...</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="delete_appointment_title">Delete appointment?</string>
+    <string name="delete_appointment_message">Are you sure you want to delete this appointment? This action cannot be undone.</string>
+    <string name="delete_appointment_success">Appointment deleted successfully.</string>
     <string name="messages_subtitle">Stay connected with your doctors</string>
     <string name="messages_search_hint">Search by doctor name</string>
     <string name="messages_empty">No conversations available.</string>
