@@ -270,6 +270,39 @@ public class AppRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
+    public void fetchDoctorProfilesFromFirestoreUsers(ListCallback<Doctor> callback) {
+        firestore.collection("users")
+                .whereEqualTo("role", "doctor")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Doctor> doctors = new ArrayList<>();
+                    querySnapshot.getDocuments().forEach(document -> {
+                        Doctor doctor = new Doctor();
+                        doctor.id = document.getId();
+                        doctor.name = document.getString("name");
+                        if (doctor.name == null || doctor.name.isEmpty()) {
+                            doctor.name = document.getString("email");
+                        }
+                        doctor.specialty = document.getString("specialty");
+                        doctor.hospital = document.getString("hospital");
+                        doctor.bio = document.getString("bio");
+                        doctor.photoUrl = document.getString("photoUrl");
+                        doctor.consultationFee = document.getString("consultationFee");
+                        doctor.address = document.getString("address");
+                        doctor.languages = document.getString("languages");
+                        doctor.qualification = document.getString("qualification");
+                        doctor.experienceYears = document.contains("experienceYears") ? document.getLong("experienceYears").intValue() : 0;
+                        doctor.patientCount = document.contains("patientCount") ? document.getLong("patientCount").intValue() : 0;
+                        doctor.rating = document.contains("rating") ? document.getDouble("rating") : 0.0;
+                        doctor.ratingCount = document.contains("ratingCount") ? document.getLong("ratingCount").intValue() : 0;
+                        doctor.isAvailable = document.contains("isAvailable") ? document.getBoolean("isAvailable") : false;
+                        doctors.add(doctor);
+                    });
+                    callback.onData(doctors);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
     public void saveDoctorAvailabilitySlot(String doctorId, DoctorAvailabilitySlot slot, @Nullable CompletionCallback callback) {
         if (doctorId == null || slot == null) {
             if (callback != null) {

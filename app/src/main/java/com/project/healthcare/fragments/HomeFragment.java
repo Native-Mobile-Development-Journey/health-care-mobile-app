@@ -3,6 +3,7 @@ package com.project.healthcare.fragments;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
@@ -37,8 +38,8 @@ import java.util.Locale;
 
 public class HomeFragment extends Fragment {
 
+    private static final String TAG = "HomeFragment";
     private final AppRepository repository = AppRepository.getInstance();
-    private static final double HIGH_RATING_THRESHOLD = 4.5;
     private static final int MAX_RECOMMENDED_DOCTORS = 3;
 
     private final List<Doctor> allDoctors = new ArrayList<>();
@@ -46,12 +47,14 @@ public class HomeFragment extends Fragment {
     private final List<Doctor> filteredDoctors = new ArrayList<>();
     private final List<Appointment> allAppointments = new ArrayList<>();
 
+    private RecyclerView doctorsRecycler;
     private DoctorAdapter doctorAdapter;
     private ServiceAdapter serviceAdapter;
     private ValueEventListener doctorsListener;
     private ValueEventListener appointmentsListener;
 
     private TextView userNameText;
+    private TextView doctorEmptyText;
     private TextView scheduleDoctorText;
     private TextView scheduleSpecialtyText;
     private TextView scheduleHospitalText;
@@ -80,6 +83,7 @@ public class HomeFragment extends Fragment {
         searchInput = view.findViewById(R.id.input_home_search);
         seeMoreButton = view.findViewById(R.id.button_see_more_doctors);
         scheduleCard = view.findViewById(R.id.card_schedule_today);
+        doctorEmptyText = view.findViewById(R.id.text_home_doctor_empty);
 
         userNameText.setText(repository.getCurrentUserDisplayName());
 
@@ -115,10 +119,11 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupDoctors(View root) {
-        RecyclerView doctorsRecycler = root.findViewById(R.id.recycler_home_doctors);
+        doctorsRecycler = root.findViewById(R.id.recycler_home_doctors);
         doctorsRecycler.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         doctorAdapter = new DoctorAdapter(this::openDoctorDetail);
         doctorsRecycler.setAdapter(doctorAdapter);
+        updateDoctorEmptyState();
     }
 
     private void setupSearch() {
@@ -153,32 +158,15 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchDoctorRecommendations() {
-        repository.fetchAllDoctorProfiles(new AppRepository.ListCallback<Doctor>() {
+        repository.fetchDoctorProfilesFromFirestoreUsers(new AppRepository.ListCallback<Doctor>() {
             @Override
             public void onData(List<Doctor> items) {
-                allDoctors.clear();
-                allDoctors.addAll(items);
-                allDoctors.sort((a, b) -> Double.compare(b.rating, a.rating));
-
-                recommendedDoctors.clear();
-                for (Doctor doctor : allDoctors) {
-                    if (doctor.rating >= HIGH_RATING_THRESHOLD) {
-                        recommendedDoctors.add(doctor);
-                    }
+                Log.d(TAG, "fetchDoctorProfilesFromFirestoreUsers loaded count=" + items.size());
+                if (items.isEmpty()) {
+                    fetchDoctorsFromFirestoreFallback();
+                    return;
                 }
-
-                if (recommendedDoctors.isEmpty() && !allDoctors.isEmpty()) {
-                    for (int i = 0; i < Math.min(MAX_RECOMMENDED_DOCTORS, allDoctors.size()); i++) {
-                        recommendedDoctors.add(allDoctors.get(i));
-                    }
-                }
-
-                if (recommendedDoctors.size() > MAX_RECOMMENDED_DOCTORS) {
-                    recommendedDoctors.subList(MAX_RECOMMENDED_DOCTORS, recommendedDoctors.size()).clear();
-                }
-
-                doctorAdapter.submitList(new ArrayList<>(recommendedDoctors));
-                bindScheduleCard();
+                populateDoctorRecommendations(items);
             }
 
             @Override
@@ -186,8 +174,79 @@ public class HomeFragment extends Fragment {
                 if (isAdded()) {
                     Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
                 }
+                fetchDoctorsFromFirestoreFallback();
             }
         });
+    }
+
+    private void fetchDoctorsFromFirestoreFallback() {
+        repository.fetchAllDoctorProfiles(new AppRepository.ListCallback<Doctor>() {
+            @Override
+            public void onData(List<Doctor> items) {
+                Log.d(TAG, "fetchAllDoctorProfiles loaded count=" + items.size());
+                if (items.isEmpty()) {
+                    fetchDoctorUsersFromFirestoreFallback();
+                    return;
+                }
+                populateDoctorRecommendations(items);
+            }
+
+            @Override
+            public void onError(String message) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                }
+                fetchDoctorUsersFromFirestoreFallback();
+            }
+        });
+    }
+
+    private void fetchDoctorUsersFromFirestoreFallback() {
+        repository.fetchDoctorProfilesFromFirestoreUsers(new AppRepository.ListCallback<Doctor>() {
+            @Override
+            public void onData(List<Doctor> items) {
+                Log.d(TAG, "fetchDoctorProfilesFromFirestoreUsers loaded count=" + items.size());
+                if (items.isEmpty()) {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "No doctor profiles found in Firestore users", Toast.LENGTH_SHORT).show();
+                    }
+                    allDoctors.clear();
+                    populateDoctorRecommendations(allDoctors);
+                    return;
+                }
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), "Loaded " + items.size() + " doctors from Firestore users", Toast.LENGTH_SHORT).show();
+                }
+                populateDoctorRecommendations(items);
+            }
+
+            @Override
+            public void onError(String message) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                }
+                allDoctors.clear();
+                populateDoctorRecommendations(allDoctors);
+            }
+        });
+    }
+
+    private void populateDoctorRecommendations(List<Doctor> items) {
+        allDoctors.clear();
+        allDoctors.addAll(items);
+        allDoctors.sort((a, b) -> Double.compare(b.rating, a.rating));
+
+        recommendedDoctors.clear();
+        for (int i = 0; i < Math.min(MAX_RECOMMENDED_DOCTORS, allDoctors.size()); i++) {
+            recommendedDoctors.add(allDoctors.get(i));
+        }
+
+        if (recommendedDoctors.isEmpty() && !allDoctors.isEmpty()) {
+            recommendedDoctors.addAll(allDoctors);
+        }
+
+        applyDoctorFilter("");
+        bindScheduleCard();
     }
 
     private void showDoctorRecommendationSheet() {
@@ -251,6 +310,13 @@ public class HomeFragment extends Fragment {
         }
 
         doctorAdapter.submitList(filteredDoctors);
+        updateDoctorEmptyState();
+    }
+
+    private void updateDoctorEmptyState() {
+        boolean isEmpty = filteredDoctors.isEmpty();
+        doctorsRecycler.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+        doctorEmptyText.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
     }
 
     private void bindScheduleCard() {
