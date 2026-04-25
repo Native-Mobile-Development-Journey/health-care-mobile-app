@@ -32,7 +32,7 @@ public class DoctorAppointmentsFragment extends Fragment implements AppointmentA
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_doctor_appointments);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        appointmentAdapter = new AppointmentAdapter(this);
+        appointmentAdapter = new AppointmentAdapter(this, true);
         recyclerView.setAdapter(appointmentAdapter);
 
         loadAppointments();

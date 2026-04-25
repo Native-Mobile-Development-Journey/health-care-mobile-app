@@ -272,11 +272,6 @@ public class DoctorDetailFragment extends Fragment {
     private void setupConfirmButton(View root) {
         View button = root.findViewById(R.id.button_confirm_schedule);
         button.setOnClickListener(v -> {
-            if (selectedDoctor == null) {
-                Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
-                return;
-            }
-
             DateOption dateOption = dateOptionAdapter.getSelectedItem();
             TimeOption timeOption = timeOptionAdapter.getSelectedItem();
             if (dateOption == null || timeOption == null) {
@@ -289,9 +284,43 @@ public class DoctorDetailFragment extends Fragment {
 
             if (appointmentId != null && !appointmentId.trim().isEmpty()) {
                 repository.rescheduleAppointment(appointmentId, selectedDate, selectedTime, this::handleCompletion);
-            } else {
-                repository.createAppointment(selectedDoctor, selectedDate, selectedTime, this::handleCompletion);
+                return;
             }
+
+            if (selectedDoctor != null) {
+                repository.createAppointment(selectedDoctor, selectedDate, selectedTime, this::handleCompletion);
+                return;
+            }
+
+            if (doctorId == null) {
+                Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Toast.makeText(requireContext(), R.string.schedule_confirming, Toast.LENGTH_SHORT).show();
+            repository.fetchDoctorProfileFromFirestoreUsers(doctorId, new AppRepository.DoctorCallback() {
+                @Override
+                public void onDoctorLoaded(@Nullable Doctor doctor) {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    if (doctor == null) {
+                        Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    selectedDoctor = doctor;
+                    bindDoctor(doctor);
+                    repository.createAppointment(doctor, selectedDate, selectedTime, DoctorDetailFragment.this::handleCompletion);
+                }
+
+                @Override
+                public void onError(String message) {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+                }
+            });
         });
     }
 
@@ -301,10 +330,19 @@ public class DoctorDetailFragment extends Fragment {
         }
         if (success) {
             Toast.makeText(requireContext(), R.string.schedule_confirm_success, Toast.LENGTH_SHORT).show();
+            if (getActivity() instanceof com.project.healthcare.MainActivity && !isCurrentUserDoctor()) {
+                ((com.project.healthcare.MainActivity) getActivity()).openScheduleTab();
+                return;
+            }
             requireActivity().getOnBackPressedDispatcher().onBackPressed();
             return;
         }
         Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean isCurrentUserDoctor() {
+        String uid = repository.getCurrentUserUid();
+        return uid != null && uid.equals(doctorId);
     }
 
     @Override

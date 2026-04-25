@@ -25,9 +25,11 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
 
     private final List<Appointment> items = new ArrayList<>();
     private final OnAppointmentInteractionListener listener;
+    private final boolean isDoctorView;
 
-    public AppointmentAdapter(OnAppointmentInteractionListener listener) {
+    public AppointmentAdapter(OnAppointmentInteractionListener listener, boolean isDoctorView) {
         this.listener = listener;
+        this.isDoctorView = isDoctorView;
     }
 
     public void submitList(List<Appointment> newItems) {
@@ -47,7 +49,10 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
     public void onBindViewHolder(@NonNull AppointmentViewHolder holder, int position) {
         Appointment item = items.get(position);
 
-        holder.doctor.setText(item.doctorName);
+        String displayName = isDoctorView
+                ? (item.patientName != null && !item.patientName.isEmpty() ? item.patientName : item.doctorName)
+                : (item.doctorName != null && !item.doctorName.isEmpty() ? item.doctorName : item.patientName);
+        holder.doctor.setText(displayName);
         holder.specialty.setText(item.specialty);
         holder.hospital.setText(item.hospital);
         holder.time.setText(item.time);

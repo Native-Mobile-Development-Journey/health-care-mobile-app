@@ -609,6 +609,25 @@ public class AppRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
+    public void getPatientAppointments(String patientUid, ListCallback<Appointment> callback) {
+        firestore.collection(APPOINTMENTS_COLLECTION)
+                .whereEqualTo("patientUid", patientUid)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Appointment> appointments = new ArrayList<>();
+                    querySnapshot.getDocuments().forEach(document -> {
+                        Appointment appointment = document.toObject(Appointment.class);
+                        if (appointment != null) {
+                            appointment.id = document.getId();
+                            appointments.add(appointment);
+                        }
+                    });
+                    Collections.sort(appointments, Comparator.comparing(a -> safeLower(a.date + " " + a.time)));
+                    callback.onData(appointments);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
     public void saveDoctorPatientReference(String doctorId, String patientUid, String patientName, String lastAppointmentDate, String status, @Nullable CompletionCallback callback) {
         if (doctorId == null || patientUid == null) {
             if (callback != null) {
@@ -926,6 +945,10 @@ public class AppRepository {
             callback.onComplete(false, "User not logged in");
             return;
         }
+        if (doctor == null || doctor.id == null) {
+            callback.onComplete(false, "Doctor information unavailable");
+            return;
+        }
 
         String appointmentId = appointmentsRef.push().getKey();
         if (appointmentId == null) {
@@ -933,6 +956,7 @@ public class AppRepository {
             return;
         }
 
+        String patientName = getCurrentUserDisplayName();
         Appointment appointment = new Appointment(
                 appointmentId,
                 uid,
@@ -942,13 +966,27 @@ public class AppRepository {
                 doctor.hospital,
                 date,
                 time,
-                Appointment.STATUS_UPCOMING
+                Appointment.STATUS_UPCOMING,
+                patientName
         );
 
-        appointmentsRef.child(appointmentId)
-                .setValue(appointment)
-                .addOnSuccessListener(unused -> callback.onComplete(true, null))
-                .addOnFailureListener(e -> callback.onComplete(false, e.getMessage()));
+        Task<Void> rtdbTask = appointmentsRef.child(appointmentId).setValue(appointment);
+        Task<Void> firestoreTask = firestore.collection(APPOINTMENTS_COLLECTION)
+                .document(appointmentId)
+                .set(appointment);
+
+        Tasks.whenAll(rtdbTask, firestoreTask)
+                .addOnSuccessListener(unused -> {
+                    saveDoctorPatientReference(doctor.id, uid, patientName, date, Appointment.STATUS_UPCOMING, null);
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
     }
 
     public void rescheduleAppointment(String appointmentId, String date, String time, CompletionCallback callback) {
@@ -957,10 +995,22 @@ public class AppRepository {
         updates.put("time", time);
         updates.put("status", Appointment.STATUS_UPCOMING);
 
-        appointmentsRef.child(appointmentId)
-                .updateChildren(updates)
-                .addOnSuccessListener(unused -> callback.onComplete(true, null))
-                .addOnFailureListener(e -> callback.onComplete(false, e.getMessage()));
+        Task<Void> rtdbTask = appointmentsRef.child(appointmentId).updateChildren(updates);
+        Task<Void> firestoreTask = firestore.collection(APPOINTMENTS_COLLECTION)
+                .document(appointmentId)
+                .update(updates);
+
+        Tasks.whenAll(rtdbTask, firestoreTask)
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
     }
 
     @Nullable

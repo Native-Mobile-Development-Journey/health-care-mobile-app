@@ -139,4 +139,8 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
         bottomNavigationView.setVisibility(View.GONE);
     }
+
+    public void openScheduleTab() {
+        bottomNavigationView.setSelectedItemId(R.id.nav_schedule);
+    }
 }

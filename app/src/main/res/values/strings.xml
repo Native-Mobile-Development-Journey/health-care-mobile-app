@@ -66,6 +66,7 @@
     <string name="schedule_action_new_appointment">Choose a new slot for this doctor</string>
     <string name="schedule_selection_required">Please select date and time first.</string>
     <string name="schedule_confirm_success">Appointment saved successfully.</string>
+    <string name="schedule_confirming">Confirming schedule...</string>
     <string name="messages_subtitle">Stay connected with your doctors</string>
     <string name="messages_search_hint">Search by doctor name</string>
     <string name="messages_empty">No conversations available.</string>

@@ -18,6 +18,7 @@ public class Appointment {
     public String date;
     public String time;
     public String status;
+    public String patientName;
 
     public Appointment() {
         // Needed for Firebase deserialization.
@@ -32,7 +33,8 @@ public class Appointment {
             String hospital,
             String date,
             String time,
-            String status
+            String status,
+            String patientName
     ) {
         this.id = id;
         this.patientUid = patientUid;
@@ -43,6 +45,7 @@ public class Appointment {
         this.date = date;
         this.time = time;
         this.status = status;
+        this.patientName = patientName;
     }
 
     public String normalizedStatus() {

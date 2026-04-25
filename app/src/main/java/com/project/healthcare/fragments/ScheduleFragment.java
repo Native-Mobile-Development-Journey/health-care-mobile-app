@@ -79,7 +79,7 @@ public class ScheduleFragment extends Fragment {
                     openDoctorDetail(appointment.doctorId, null);
                 }
             }
-        });
+        }, false);
         recyclerView.setAdapter(appointmentAdapter);
     }
 
@@ -128,7 +128,7 @@ public class ScheduleFragment extends Fragment {
             emptyText.setVisibility(View.VISIBLE);
             return;
         }
-        appointmentsListener = repository.observeAppointments(uid, new AppRepository.ListCallback<Appointment>() {
+        repository.getPatientAppointments(uid, new AppRepository.ListCallback<Appointment>() {
             @Override
             public void onData(List<Appointment> items) {
                 allAppointments.clear();
