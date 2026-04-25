@@ -13,6 +13,10 @@
         android:icon="@android:drawable/ic_menu_my_calendar"
         android:title="Availability" />
     <item
+        android:id="@+id/menu_doctor_messages"
+        android:icon="@android:drawable/ic_menu_send"
+        android:title="Messages" />
+    <item
         android:id="@+id/menu_doctor_settings"
         android:icon="@android:drawable/ic_menu_manage"
         android:title="Settings" />

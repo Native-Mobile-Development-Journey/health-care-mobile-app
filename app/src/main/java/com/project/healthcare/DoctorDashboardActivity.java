@@ -16,6 +16,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.project.healthcare.auth.AuthActivity;
 import com.project.healthcare.fragments.DoctorAppointmentsFragment;
 import com.project.healthcare.fragments.DoctorAvailabilityFragment;
+import com.project.healthcare.fragments.DoctorMessagesFragment;
 import com.project.healthcare.fragments.DoctorOverviewFragment;
 import com.project.healthcare.fragments.DoctorSettingsFragment;
 
@@ -45,6 +46,10 @@ public class DoctorDashboardActivity extends AppCompatActivity {
             }
             if (itemId == R.id.menu_doctor_availability) {
                 setCurrentFragment(new DoctorAvailabilityFragment());
+                return true;
+            }
+            if (itemId == R.id.menu_doctor_messages) {
+                setCurrentFragment(new DoctorMessagesFragment());
                 return true;
             }
             if (itemId == R.id.menu_doctor_settings) {

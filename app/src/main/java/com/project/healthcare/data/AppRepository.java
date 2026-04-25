@@ -7,6 +7,7 @@ import com.project.healthcare.data.models.Appointment;
 import com.project.healthcare.data.models.Conversation;
 import com.project.healthcare.data.models.Doctor;
 import com.project.healthcare.data.models.DoctorAvailabilitySlot;
+import com.project.healthcare.data.models.Message;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -14,15 +15,18 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.functions.FirebaseFunctions;
 import com.google.firebase.functions.HttpsCallableResult;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -52,10 +56,17 @@ public class AppRepository {
         void onError(String message);
     }
 
+    public interface ConversationCallback {
+        void onConversationLoaded(@Nullable Conversation conversation);
+
+        void onError(String message);
+    }
+
     private static final String NODE_USERS = "users";
     private static final String NODE_DOCTORS = "doctors";
     private static final String NODE_APPOINTMENTS = "appointments";
     private static final String NODE_CONVERSATIONS = "conversations";
+    private static final String NODE_CONVERSATION_MESSAGES = "messages";
     private static final String DOCS_COLLECTION = "doctors";
     private static final String APPOINTMENTS_COLLECTION = "appointments";
     private static final String AVAILABILITY_COLLECTION = "availability";
@@ -235,6 +246,26 @@ public class AppRepository {
                         doctor.id = doctorId;
                     }
                     callback.onDoctorLoaded(doctor);
+                })
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    public void fetchAllDoctorProfiles(ListCallback<Doctor> callback) {
+        firestore.collection(DOCS_COLLECTION).get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Doctor> doctors = new ArrayList<>();
+                    querySnapshot.getDocuments().forEach(document -> {
+                        Doctor doctor = document.toObject(Doctor.class);
+                        if (doctor == null) {
+                            return;
+                        }
+                        if (doctor.id == null || doctor.id.isEmpty()) {
+                            doctor.id = document.getId();
+                        }
+                        doctors.add(doctor);
+                    });
+                    Collections.shuffle(doctors);
+                    callback.onData(doctors);
                 })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
@@ -473,6 +504,172 @@ public class AppRepository {
     public void removeConversationsListener(String uid, ValueEventListener listener) {
         conversationsRef.removeEventListener(listener);
         conversationsRef.orderByChild("patientUid").equalTo(uid).removeEventListener(listener);
+    }
+
+    public ValueEventListener observeDoctorConversations(String doctorUid, ListCallback<Conversation> callback) {
+        Query query = conversationsRef.orderByChild("doctorUid").equalTo(doctorUid);
+        ValueEventListener listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<Conversation> conversations = new ArrayList<>();
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    Conversation conversation = child.getValue(Conversation.class);
+                    if (conversation == null) {
+                        continue;
+                    }
+                    if (conversation.id == null || conversation.id.isEmpty()) {
+                        conversation.id = child.getKey();
+                    }
+                    conversations.add(conversation);
+                }
+                Collections.sort(conversations, Comparator.comparing(c -> safeLower(c.patientName != null ? c.patientName : "")));
+                callback.onData(conversations);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onError(error.getMessage());
+            }
+        };
+        query.addValueEventListener(listener);
+        return listener;
+    }
+
+    public void removeDoctorConversationsListener(String doctorUid, ValueEventListener listener) {
+        conversationsRef.removeEventListener(listener);
+        conversationsRef.orderByChild("doctorUid").equalTo(doctorUid).removeEventListener(listener);
+    }
+
+    public void findOrCreateConversation(String patientUid, String patientName, String doctorUid, String doctorName, String initialMessage, ConversationCallback callback) {
+        if (patientUid == null || doctorUid == null) {
+            callback.onError("Invalid conversation participants");
+            return;
+        }
+
+        Query query = conversationsRef.orderByChild("patientUid").equalTo(patientUid);
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    Conversation conversation = child.getValue(Conversation.class);
+                    if (conversation == null || conversation.doctorUid == null) {
+                        continue;
+                    }
+                    if (conversation.doctorUid.equals(doctorUid)) {
+                        if (conversation.id == null || conversation.id.isEmpty()) {
+                            conversation.id = child.getKey();
+                        }
+                        callback.onConversationLoaded(conversation);
+                        return;
+                    }
+                }
+
+                String conversationId = conversationsRef.push().getKey();
+                if (conversationId == null) {
+                    callback.onError("Unable to create conversation");
+                    return;
+                }
+
+                Conversation conversation = new Conversation(
+                        conversationId,
+                        patientUid,
+                        patientName,
+                        doctorUid,
+                        doctorName,
+                        initialMessage != null ? initialMessage : "",
+                        "",
+                        0,
+                        null
+                );
+                conversationsRef.child(conversationId).setValue(conversation)
+                        .addOnSuccessListener(unused -> callback.onConversationLoaded(conversation))
+                        .addOnFailureListener(e -> callback.onError(e.getMessage()));
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onError(error.getMessage());
+            }
+        });
+    }
+
+    public ValueEventListener observeConversationMessages(String conversationId, ListCallback<Message> callback) {
+        if (conversationId == null) {
+            callback.onData(Collections.emptyList());
+            return null;
+        }
+
+        DatabaseReference messagesRef = conversationsRef.child(conversationId).child(NODE_CONVERSATION_MESSAGES);
+        Query query = messagesRef.orderByChild("timestamp");
+        ValueEventListener listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<Message> messages = new ArrayList<>();
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    Message message = child.getValue(Message.class);
+                    if (message == null) {
+                        continue;
+                    }
+                    if (message.id == null || message.id.isEmpty()) {
+                        message.id = child.getKey();
+                    }
+                    messages.add(message);
+                }
+                Collections.sort(messages, Comparator.comparingLong(m -> m.timestamp));
+                callback.onData(messages);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onError(error.getMessage());
+            }
+        };
+        query.addValueEventListener(listener);
+        return listener;
+    }
+
+    public void removeConversationMessagesListener(String conversationId, ValueEventListener listener) {
+        if (conversationId == null || listener == null) {
+            return;
+        }
+        DatabaseReference messagesRef = conversationsRef.child(conversationId).child(NODE_CONVERSATION_MESSAGES);
+        messagesRef.removeEventListener(listener);
+        messagesRef.orderByChild("timestamp").removeEventListener(listener);
+    }
+
+    public void sendMessage(String conversationId, Message message, @Nullable CompletionCallback callback) {
+        if (conversationId == null || message == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Unable to send message");
+            }
+            return;
+        }
+
+        String messageId = conversationsRef.child(conversationId).child(NODE_CONVERSATION_MESSAGES).push().getKey();
+        if (messageId == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Unable to send message");
+            }
+            return;
+        }
+        message.id = messageId;
+        message.timestamp = System.currentTimeMillis();
+
+        DatabaseReference messageRef = conversationsRef.child(conversationId).child(NODE_CONVERSATION_MESSAGES).child(messageId);
+        messageRef.setValue(message).addOnSuccessListener(unused -> {
+            Map<String, Object> update = new HashMap<>();
+            update.put("lastMessage", message.text);
+            update.put("timeLabel", new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date(message.timestamp)));
+            update.put("unreadCount", ServerValue.increment(1));
+            conversationsRef.child(conversationId).updateChildren(update);
+            if (callback != null) {
+                callback.onComplete(true, null);
+            }
+        }).addOnFailureListener(e -> {
+            if (callback != null) {
+                callback.onComplete(false, e.getMessage());
+            }
+        });
     }
 
     public void createAppointment(Doctor doctor, String date, String time, CompletionCallback callback) {

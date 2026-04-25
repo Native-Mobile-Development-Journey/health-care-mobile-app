@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/base_white">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Doctors"
+        android:textAppearance="@style/Text.SMD.DisplaySemibold18"
+        android:textColor="@color/base_black" />
+
+    <TextView
+        android:id="@+id/text_doctor_list_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="No doctors available."
+        android:textAppearance="@style/Text.SMD.Regular14"
+        android:visibility="gone"
+        android:textColor="@color/neutral_500" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_doctor_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" />
+
+</LinearLayout>

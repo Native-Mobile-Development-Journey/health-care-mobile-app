@@ -280,6 +280,7 @@
                         android:text="@string/doctors_recommendation" />
 
                     <TextView
+                        android:id="@+id/button_see_more_doctors"
                         style="@style/Text.SMD.Regular12"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.project.healthcare.R;
 import com.project.healthcare.data.AppRepository;
 import com.project.healthcare.data.models.Doctor;
+import com.project.healthcare.data.models.DoctorAvailabilitySlot;
 import com.project.healthcare.ui.adapter.DateOptionAdapter;
 import com.project.healthcare.ui.adapter.TimeOptionAdapter;
 import com.project.healthcare.ui.model.DateOption;
@@ -38,6 +39,7 @@ public class DoctorDetailFragment extends Fragment {
     private TimeOptionAdapter timeOptionAdapter;
     private ValueEventListener doctorsListener;
 
+    private final List<DoctorAvailabilitySlot> availabilitySlots = new ArrayList<>();
     private String doctorId;
     private String appointmentId;
     private Doctor selectedDoctor;
@@ -97,11 +99,9 @@ public class DoctorDetailFragment extends Fragment {
     private void setupDateRecycler(View root) {
         RecyclerView recyclerView = root.findViewById(R.id.recycler_detail_dates);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
-        dateOptionAdapter = new DateOptionAdapter(option -> {
-            // Selection state is managed by the adapter.
-        });
+        dateOptionAdapter = new DateOptionAdapter(option -> updateTimeOptionsForSelectedDay());
         recyclerView.setAdapter(dateOptionAdapter);
-        dateOptionAdapter.submitList(buildDateOptions());
+        dateOptionAdapter.submitList(new ArrayList<>());
     }
 
     private void setupTimeRecycler(View root) {
@@ -111,17 +111,7 @@ public class DoctorDetailFragment extends Fragment {
             // Selection state is managed by the adapter.
         });
         recyclerView.setAdapter(timeOptionAdapter);
-
-        List<TimeOption> options = new ArrayList<>();
-        options.add(new TimeOption("09:00 AM"));
-        options.add(new TimeOption("10:00 AM"));
-        options.add(new TimeOption("11:00 AM"));
-        options.add(new TimeOption("12:00 PM"));
-        options.add(new TimeOption("01:00 PM"));
-        options.add(new TimeOption("02:00 PM"));
-        options.add(new TimeOption("03:00 PM"));
-        options.add(new TimeOption("04:00 PM"));
-        timeOptionAdapter.submitList(options);
+        timeOptionAdapter.submitList(new ArrayList<>());
     }
 
     private List<DateOption> buildDateOptions() {
@@ -172,6 +162,74 @@ public class DoctorDetailFragment extends Fragment {
         patientsText.setText(String.valueOf(doctor.patientCount));
         ratingText.setText(String.format(Locale.getDefault(), "%.1f", doctor.rating));
         aboutText.setText(doctor.bio);
+        loadDoctorAvailability(doctor.id);
+    }
+
+    private void loadDoctorAvailability(String doctorId) {
+        repository.getDoctorAvailability(doctorId, new AppRepository.ListCallback<DoctorAvailabilitySlot>() {
+            @Override
+            public void onData(List<DoctorAvailabilitySlot> items) {
+                availabilitySlots.clear();
+                availabilitySlots.addAll(items);
+                updateAvailableDays();
+            }
+
+            @Override
+            public void onError(String message) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void updateAvailableDays() {
+        List<String> uniqueDays = new ArrayList<>();
+        for (DoctorAvailabilitySlot slot : availabilitySlots) {
+            if (slot.dayLabel == null) {
+                continue;
+            }
+            if (!uniqueDays.contains(slot.dayLabel)) {
+                uniqueDays.add(slot.dayLabel);
+            }
+        }
+
+        List<DateOption> dayOptions = new ArrayList<>();
+        for (String day : uniqueDays) {
+            int count = 0;
+            for (DoctorAvailabilitySlot slot : availabilitySlots) {
+                if (day.equals(slot.dayLabel)) {
+                    count++;
+                }
+            }
+            String countLabel = String.format(Locale.getDefault(), "%d slots", count);
+            dayOptions.add(new DateOption(day, countLabel, false));
+        }
+
+        if (dayOptions.isEmpty()) {
+            dateOptionAdapter.submitList(new ArrayList<>());
+            timeOptionAdapter.submitList(new ArrayList<>());
+            return;
+        }
+
+        dateOptionAdapter.submitList(dayOptions);
+        updateTimeOptionsForSelectedDay();
+    }
+
+    private void updateTimeOptionsForSelectedDay() {
+        DateOption selectedDay = dateOptionAdapter.getSelectedItem();
+        if (selectedDay == null) {
+            timeOptionAdapter.submitList(new ArrayList<>());
+            return;
+        }
+
+        List<TimeOption> timeOptions = new ArrayList<>();
+        for (DoctorAvailabilitySlot slot : availabilitySlots) {
+            if (selectedDay.dayLabel != null && selectedDay.dayLabel.equals(slot.dayLabel)) {
+                timeOptions.add(new TimeOption(slot.startTime));
+            }
+        }
+        timeOptionAdapter.submitList(timeOptions);
     }
 
     private void setupConfirmButton(View root) {

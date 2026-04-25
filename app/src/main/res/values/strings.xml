@@ -69,6 +69,9 @@
     <string name="messages_empty">No conversations available.</string>
     <string name="conversation_message_default">No recent messages</string>
     <string name="messages_opening_thread">Opening chat with %1$s</string>
+    <string name="type_message">Type a message</string>
+    <string name="send_message">Send message</string>
+    <string name="enter_message">Enter a message</string>
     <string name="settings_preferences">Preferences</string>
     <string name="settings_patient">Patient</string>
     <string name="settings_guest_email">guest@healthcare.app</string>

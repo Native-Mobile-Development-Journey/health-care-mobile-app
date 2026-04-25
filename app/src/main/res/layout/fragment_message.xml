@@ -68,8 +68,8 @@
         android:paddingStart="@dimen/space_24"
         android:paddingTop="@dimen/space_8"
         android:paddingEnd="@dimen/space_24"
-        android:paddingBottom="@dimen/space_24"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:paddingBottom="@dimen/space_8"
+        app:layout_constraintBottom_toTopOf="@id/layout_message_input"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/message_header"
@@ -83,9 +83,44 @@
         android:layout_height="wrap_content"
         android:text="@string/messages_empty"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/recycler_messages"
+        app:layout_constraintBottom_toTopOf="@id/layout_message_input"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/recycler_messages" />
+        app:layout_constraintTop_toBottomOf="@id/message_header" />
+
+    <LinearLayout
+        android:id="@+id/layout_message_input"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:layout_marginStart="@dimen/space_24"
+        android:layout_marginEnd="@dimen/space_24"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/input_chat_message"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/type_message"
+            android:inputType="text"
+            android:maxLines="4"
+            android:background="@color/base_white"
+            android:padding="12dp" />
+
+        <ImageButton
+            android:id="@+id/button_send_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/send_message"
+            android:src="@android:drawable/ic_menu_send"
+            android:tint="@color/primary_500" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
