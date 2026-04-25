@@ -38,7 +38,11 @@ import java.util.Locale;
 public class HomeFragment extends Fragment {
 
     private final AppRepository repository = AppRepository.getInstance();
+    private static final double HIGH_RATING_THRESHOLD = 4.5;
+    private static final int MAX_RECOMMENDED_DOCTORS = 3;
+
     private final List<Doctor> allDoctors = new ArrayList<>();
+    private final List<Doctor> recommendedDoctors = new ArrayList<>();
     private final List<Doctor> filteredDoctors = new ArrayList<>();
     private final List<Appointment> allAppointments = new ArrayList<>();
 
@@ -138,8 +142,8 @@ public class HomeFragment extends Fragment {
         scheduleCard.setOnClickListener(v -> {
             if (selectedScheduleAppointment != null) {
                 openDoctorDetail(selectedScheduleAppointment.doctorId, selectedScheduleAppointment.id);
-            } else {
-                openDoctorDetail((Doctor) null);
+            } else if (!allDoctors.isEmpty()) {
+                openDoctorDetail(allDoctors.get(0).id, null);
             }
         });
     }
@@ -154,12 +158,26 @@ public class HomeFragment extends Fragment {
             public void onData(List<Doctor> items) {
                 allDoctors.clear();
                 allDoctors.addAll(items);
-                Collections.shuffle(allDoctors);
-                filteredDoctors.clear();
-                for (int i = 0; i < Math.min(3, allDoctors.size()); i++) {
-                    filteredDoctors.add(allDoctors.get(i));
+                allDoctors.sort((a, b) -> Double.compare(b.rating, a.rating));
+
+                recommendedDoctors.clear();
+                for (Doctor doctor : allDoctors) {
+                    if (doctor.rating >= HIGH_RATING_THRESHOLD) {
+                        recommendedDoctors.add(doctor);
+                    }
                 }
-                doctorAdapter.submitList(filteredDoctors);
+
+                if (recommendedDoctors.isEmpty() && !allDoctors.isEmpty()) {
+                    for (int i = 0; i < Math.min(MAX_RECOMMENDED_DOCTORS, allDoctors.size()); i++) {
+                        recommendedDoctors.add(allDoctors.get(i));
+                    }
+                }
+
+                if (recommendedDoctors.size() > MAX_RECOMMENDED_DOCTORS) {
+                    recommendedDoctors.subList(MAX_RECOMMENDED_DOCTORS, recommendedDoctors.size()).clear();
+                }
+
+                doctorAdapter.submitList(new ArrayList<>(recommendedDoctors));
                 bindScheduleCard();
             }
 
@@ -219,23 +237,17 @@ public class HomeFragment extends Fragment {
         String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         boolean hasQuery = !normalized.isEmpty();
 
-        for (Doctor doctor : allDoctors) {
-            boolean matchesQuery = !hasQuery
-                    || containsIgnoreCase(doctor.name, normalized)
-                    || containsIgnoreCase(doctor.specialty, normalized)
-                    || containsIgnoreCase(doctor.hospital, normalized);
-            if (!matchesQuery) {
-                continue;
+        if (!hasQuery) {
+            filteredDoctors.addAll(recommendedDoctors.isEmpty() ? allDoctors : recommendedDoctors);
+        } else {
+            for (Doctor doctor : allDoctors) {
+                boolean matchesQuery = containsIgnoreCase(doctor.name, normalized)
+                        || containsIgnoreCase(doctor.specialty, normalized)
+                        || containsIgnoreCase(doctor.hospital, normalized);
+                if (matchesQuery) {
+                    filteredDoctors.add(doctor);
+                }
             }
-
-            if (!hasQuery && !doctor.recommended) {
-                continue;
-            }
-            filteredDoctors.add(doctor);
-        }
-
-        if (!hasQuery && filteredDoctors.isEmpty()) {
-            filteredDoctors.addAll(allDoctors);
         }
 
         doctorAdapter.submitList(filteredDoctors);
@@ -272,12 +284,9 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        if (!allDoctors.isEmpty()) {
-            Doctor doctor = allDoctors.get(0);
-            scheduleDoctorText.setText(doctor.name);
-            scheduleSpecialtyText.setText(doctor.specialty);
-            scheduleHospitalText.setText(doctor.hospital);
-        }
+        scheduleDoctorText.setText(getString(R.string.schedule_no_appointment_today));
+        scheduleSpecialtyText.setText(getString(R.string.schedule_book_doctor));
+        scheduleHospitalText.setText(getString(R.string.hospital_default));
         scheduleDateText.setText(getString(R.string.no_date_selected));
         scheduleTimeText.setText(getString(R.string.no_time_selected));
     }

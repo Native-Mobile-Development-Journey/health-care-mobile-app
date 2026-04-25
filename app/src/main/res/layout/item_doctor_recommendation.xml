@@ -31,4 +31,13 @@
         android:layout_height="wrap_content"
         android:text="@string/specialty_default" />
 
+    <TextView
+        android:id="@+id/text_doctor_rating"
+        style="@style/Text.SMD.Regular10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:textColor="@color/neutral_500"
+        android:text="4.5 ★" />
+
 </LinearLayout>

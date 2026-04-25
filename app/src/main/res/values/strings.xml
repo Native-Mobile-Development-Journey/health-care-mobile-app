@@ -22,6 +22,8 @@
     <string name="find_schedule">Find schedule</string>
 
     <string name="schedule_today">Schedule today</string>
+    <string name="schedule_no_appointment_today">No appointments today</string>
+    <string name="schedule_book_doctor">Browse top-rated doctors</string>
     <string name="doctors_recommendation">Doctor\'s recommendation</string>
     <string name="see_more">See more</string>
     <string name="services_title">Services</string>
