@@ -1,8 +1,9 @@
 {
   "name": "healthcare-app-functions",
-  "description": "Firebase Functions for Healthcare app custom claims",
+  "description": "Firebase Functions for Healthcare app custom claims + appointment lifecycle",
   "scripts": {
-    "deploy": "firebase deploy --only functions"
+    "deploy": "firebase deploy --only functions",
+    "deploy:scheduler": "firebase deploy --only functions:expireOldAppointments"
   },
   "engines": {
     "node": "18"

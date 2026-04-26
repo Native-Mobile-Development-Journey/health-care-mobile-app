@@ -60,21 +60,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         holder.time.setText(item.time);
         holder.date.setText(item.date);
 
-        String normalizedStatus = item.normalizedStatus();
-        holder.status.setText(normalizedStatus);
-        if (Appointment.STATUS_CANCELED.equals(normalizedStatus)) {
-            holder.status.setBackgroundResource(R.drawable.bg_status_cancel);
-            holder.status.setTextColor(holder.itemView.getContext().getColor(R.color.red_500));
-            holder.actionButton.setText(R.string.action_new_appointment);
-        } else if (Appointment.STATUS_COMPLETED.equals(normalizedStatus)) {
-            holder.status.setBackgroundResource(R.drawable.bg_status_complete);
-            holder.status.setTextColor(holder.itemView.getContext().getColor(R.color.green_500));
-            holder.actionButton.setText(R.string.action_new_appointment);
-        } else {
-            holder.status.setBackgroundResource(R.drawable.bg_status_upcoming_blue);
-            holder.status.setTextColor(holder.itemView.getContext().getColor(R.color.blue_500));
-            holder.actionButton.setText(R.string.action_reschedule);
-        }
+
 
         holder.root.setOnClickListener(v -> listener.onAppointmentOpen(item));
         holder.root.setOnLongClickListener(v -> {

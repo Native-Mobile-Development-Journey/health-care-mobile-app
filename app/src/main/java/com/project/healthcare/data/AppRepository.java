@@ -357,51 +357,100 @@ public class AppRepository {
             return;
         }
 
-        String slotId = slot.id != null && !slot.id.trim().isEmpty() ? slot.id : firestore.collection(DOCS_COLLECTION).document(doctorId).collection(AVAILABILITY_COLLECTION).document().getId();
-        slot.id = slotId;
+        // Compute canonical fields from legacy strings
+        slot.computeMinutesFromLegacy();
+        if (slot.startMinuteOfDay < 0 || slot.endMinuteOfDay < 0) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid time format");
+            }
+            return;
+        }
+        if (slot.startMinuteOfDay >= slot.endMinuteOfDay) {
+            if (callback != null) {
+                callback.onComplete(false, "Start time must be before end time");
+            }
+            return;
+        }
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("id", slot.id);
-        payload.put("dayOfWeek", slot.dayOfWeek != null ? slot.dayOfWeek : slot.dayLabel);
-        payload.put("dayLabel", slot.dayLabel);
-        payload.put("startTime", slot.startTime);
-        payload.put("endTime", slot.endTime);
-        payload.put("durationMinutes", slot.durationMinutes);
-        payload.put("isActive", slot.isActive);
-
-        DocumentReference doctorDoc = firestore.collection(DOCS_COLLECTION)
-                .document(doctorId)
-                .collection(AVAILABILITY_COLLECTION)
-                .document(slotId);
-        DocumentReference userDoc = firestore.collection("users")
-                .document(doctorId)
-                .collection(AVAILABILITY_COLLECTION)
-                .document(slotId);
-
-        Map<String, Object> fieldUpdate = new HashMap<>();
-        String fieldPath = buildAvailabilityFieldPath(slot.dayLabel, slot.id);
-        fieldUpdate.put(fieldPath, payload);
-
-        Task<Void> doctorTask = doctorDoc.set(payload);
-        Task<Void> userTask = userDoc.set(payload);
-        Task<Void> doctorFieldTask = firestore.collection(DOCS_COLLECTION)
-                .document(doctorId)
-                .set(fieldUpdate, SetOptions.merge());
-        Task<Void> userFieldTask = firestore.collection("users")
-                .document(doctorId)
-                .set(fieldUpdate, SetOptions.merge());
-
-        Tasks.whenAll(doctorTask, userTask, doctorFieldTask, userFieldTask)
-                .addOnSuccessListener(unused -> {
-                    if (callback != null) {
-                        callback.onComplete(true, null);
+        // Prevent duplicate slot for same doctor/day/start/end
+        // We do a lightweight check by querying existing slots for same dayLabel and startTime
+        // (best-effort client-side guard; server-side uniqueness should be enforced via rules/indexes)
+        getDoctorAvailability(doctorId, new ListCallback<DoctorAvailabilitySlot>() {
+            @Override
+            public void onData(List<DoctorAvailabilitySlot> existing) {
+                for (DoctorAvailabilitySlot s : existing) {
+                    if (slot.dayLabel != null && slot.dayLabel.equals(s.dayLabel)
+                            && slot.startTime != null && slot.startTime.equals(s.startTime)
+                            && slot.endTime != null && slot.endTime.equals(s.endTime)) {
+                        if (callback != null) {
+                            callback.onComplete(false, "Duplicate slot: this time already exists for this day");
+                        }
+                        return;
                     }
-                })
-                .addOnFailureListener(e -> {
-                    if (callback != null) {
-                        callback.onComplete(false, e.getMessage());
-                    }
-                });
+                }
+
+                // No duplicate found — proceed to save
+                String slotId = slot.id != null && !slot.id.trim().isEmpty() ? slot.id : firestore.collection(DOCS_COLLECTION).document(doctorId).collection(AVAILABILITY_COLLECTION).document().getId();
+                slot.id = slotId;
+                if (slot.slotKey == null) slot.slotKey = slot.computeSlotKey(doctorId);
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("id", slot.id);
+                payload.put("dayOfWeek", slot.dayOfWeek != null ? slot.dayOfWeek : slot.dayLabel);
+                payload.put("dayLabel", slot.dayLabel);
+                payload.put("startTime", slot.startTime);
+                payload.put("endTime", slot.endTime);
+                payload.put("durationMinutes", slot.durationMinutes);
+                payload.put("isActive", slot.isActive);
+                payload.put("startMinuteOfDay", slot.startMinuteOfDay);
+                payload.put("endMinuteOfDay", slot.endMinuteOfDay);
+                payload.put("timeZoneId", slot.timeZoneId);
+                payload.put("capacity", slot.capacity);
+                payload.put("bookedCount", slot.bookedCount);
+                payload.put("slotKey", slot.slotKey);
+
+                DocumentReference doctorDoc = firestore.collection(DOCS_COLLECTION)
+                        .document(doctorId)
+                        .collection(AVAILABILITY_COLLECTION)
+                        .document(slotId);
+                DocumentReference userDoc = firestore.collection("users")
+                        .document(doctorId)
+                        .collection(AVAILABILITY_COLLECTION)
+                        .document(slotId);
+
+                Map<String, Object> fieldUpdate = new HashMap<>();
+                String fieldPath = buildAvailabilityFieldPath(slot.dayLabel, slot.id);
+                fieldUpdate.put(fieldPath, payload);
+
+                Task<Void> doctorTask = doctorDoc.set(payload);
+                Task<Void> userTask = userDoc.set(payload);
+                Task<Void> doctorFieldTask = firestore.collection(DOCS_COLLECTION)
+                        .document(doctorId)
+                        .set(fieldUpdate, SetOptions.merge());
+                Task<Void> userFieldTask = firestore.collection("users")
+                        .document(doctorId)
+                        .set(fieldUpdate, SetOptions.merge());
+
+                Tasks.whenAll(doctorTask, userTask, doctorFieldTask, userFieldTask)
+                        .addOnSuccessListener(unused -> {
+                            if (callback != null) {
+                                callback.onComplete(true, null);
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            if (callback != null) {
+                                callback.onComplete(false, e.getMessage());
+                            }
+                        });
+            }
+
+            @Override
+            public void onError(String message) {
+                if (callback != null) {
+                    callback.onComplete(false, "Unable to check duplicates: " + message);
+                }
+            }
+        });
     }
 
     public void deleteDoctorAvailabilitySlot(String doctorId, DoctorAvailabilitySlot slot, @Nullable CompletionCallback callback) {
@@ -466,6 +515,7 @@ public class AppRepository {
                         DoctorAvailabilitySlot slot = document.toObject(DoctorAvailabilitySlot.class);
                         if (slot != null) {
                             slot.id = document.getId();
+                            slot.upgradeLegacyFields(doctorId);
                             slots.add(slot);
                         }
                     });
@@ -489,6 +539,7 @@ public class AppRepository {
                         DoctorAvailabilitySlot slot = document.toObject(DoctorAvailabilitySlot.class);
                         if (slot != null) {
                             slot.id = document.getId();
+                            slot.upgradeLegacyFields(doctorId);
                             slots.add(slot);
                         }
                     });
@@ -569,6 +620,8 @@ public class AppRepository {
                 slot.endTime = slotMap.containsKey("endTime") ? String.valueOf(slotMap.get("endTime")) : null;
                 slot.durationMinutes = slotMap.containsKey("durationMinutes") ? ((Number) slotMap.get("durationMinutes")).intValue() : 60;
                 slot.isActive = slotMap.containsKey("isActive") ? Boolean.TRUE.equals(slotMap.get("isActive")) : true;
+                // upgrade legacy parsed slot
+                slot.upgradeLegacyFields(null);
                 slots.add(slot);
             }
         }
@@ -688,62 +741,15 @@ public class AppRepository {
                 });
     }
 
-    public void deleteAppointment(String appointmentId, @Nullable CompletionCallback callback) {
-        if (appointmentId == null || appointmentId.trim().isEmpty()) {
-            if (callback != null) {
-                callback.onComplete(false, "Invalid appointment reference");
-            }
-            return;
-        }
 
-        Task<Void> rtdbTask = appointmentsRef.child(appointmentId).removeValue();
-        Task<Void> firestoreTask = firestore.collection(APPOINTMENTS_COLLECTION)
-                .document(appointmentId)
-                .delete();
 
-        Tasks.whenAll(rtdbTask, firestoreTask)
-                .addOnSuccessListener(unused -> {
-                    if (callback != null) {
-                        callback.onComplete(true, null);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (callback != null) {
-                        callback.onComplete(false, e.getMessage());
-                    }
-                });
-    }
 
-    public void updateAppointmentStatus(String appointmentId, String status, @Nullable CompletionCallback callback) {
-        if (appointmentId == null || appointmentId.trim().isEmpty()) {
-            if (callback != null) {
-                callback.onComplete(false, "Invalid appointment reference");
-            }
-            return;
-        }
-
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", status);
-
-        Task<Void> rtdbTask = appointmentsRef.child(appointmentId).updateChildren(updates);
-        Task<Void> firestoreTask = firestore.collection(APPOINTMENTS_COLLECTION)
-                .document(appointmentId)
-                .update(updates);
-
-        Tasks.whenAll(rtdbTask, firestoreTask)
-                .addOnSuccessListener(unused -> {
-                    if (callback != null) {
-                        callback.onComplete(true, null);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (callback != null) {
-                        callback.onComplete(false, e.getMessage());
-                    }
-                });
-    }
 
     public void saveDoctorPatientReference(String doctorId, String patientUid, String patientName, String lastAppointmentDate, String status, @Nullable CompletionCallback callback) {
+        saveDoctorPatientReference(doctorId, patientUid, patientName, lastAppointmentDate, status, System.currentTimeMillis(), callback);
+    }
+
+    public void saveDoctorPatientReference(String doctorId, String patientUid, String patientName, String lastAppointmentDate, String status, long lastAppointmentStartAt, @Nullable CompletionCallback callback) {
         if (doctorId == null || patientUid == null) {
             if (callback != null) {
                 callback.onComplete(false, "Invalid doctor/patient reference");
@@ -756,12 +762,14 @@ public class AppRepository {
         payload.put("patientName", patientName);
         payload.put("lastAppointmentDate", lastAppointmentDate);
         payload.put("lastAppointmentStatus", status);
+        payload.put("lastAppointmentStartAt", lastAppointmentStartAt);
+        payload.put("updatedAt", System.currentTimeMillis());
 
         firestore.collection(DOCS_COLLECTION)
                 .document(doctorId)
                 .collection(PATIENTS_COLLECTION)
                 .document(patientUid)
-                .set(payload)
+                .set(payload, SetOptions.merge())
                 .addOnSuccessListener(unused -> {
                     if (callback != null) {
                         callback.onComplete(true, null);
@@ -772,6 +780,113 @@ public class AppRepository {
                         callback.onComplete(false, e.getMessage());
                     }
                 });
+    }
+
+    /**
+     * Create appointment with atomic slot locking using backend Cloud Function.
+     * This guarantees no concurrent booking conflicts and enforces all validation rules server-side.
+     */
+    public void createAppointmentAtomic(Doctor doctor, DoctorAvailabilitySlot slot, long startAtEpochMs, long endAtEpochMs,
+                                         String dateDisplay, String timeDisplay, @Nullable CompletionCallback callback) {
+
+        String currentUid = getCurrentUserUid();
+        String currentName = getCurrentUserDisplayName();
+
+        if (currentUid == null) {
+            if (callback != null) callback.onComplete(false, "User not authenticated");
+            return;
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("doctorId", doctor.id);
+        data.put("slotDocId", slot.id);
+        data.put("slotKey", slot.slotKey);
+        data.put("startAt", startAtEpochMs);
+        data.put("endAt", endAtEpochMs);
+        data.put("timeZoneId", slot.timeZoneId);
+        data.put("date", dateDisplay);
+        data.put("time", timeDisplay);
+        data.put("idempotencyKey", java.util.UUID.randomUUID().toString());
+        data.put("doctorName", doctor.name);
+        data.put("patientName", currentName);
+        data.put("specialty", doctor.specialty);
+        data.put("hospital", doctor.hospital);
+
+        functions.getHttpsCallable("createAppointmentWithLock")
+                .call(data)
+                .addOnSuccessListener(result -> {
+                    if (callback != null) {
+                        callback.onComplete(true, "Appointment booked successfully");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        String message = e.getMessage();
+                        if (message == null || message.isEmpty()) {
+                            message = "Failed to book appointment";
+                        }
+                        callback.onComplete(false, message);
+                    }
+                });
+    }
+
+    /**
+     * Update appointment status (complete/cancel) using backend Cloud Function.
+     * Automatically releases slot lock when cancelling upcoming appointments.
+     */
+    public void updateAppointmentStatus(String appointmentId, String newStatus, @Nullable CompletionCallback callback) {
+
+        if (appointmentId == null || appointmentId.isEmpty()) {
+            if (callback != null) callback.onComplete(false, "Invalid appointment ID");
+            return;
+        }
+
+        if (Appointment.STATUS_CANCELED.equals(newStatus)) {
+            // Cancel appointment via cloud function (releases slot lock)
+            Map<String, Object> data = new HashMap<>();
+            data.put("appointmentId", appointmentId);
+
+            functions.getHttpsCallable("cancelAppointment")
+                    .call(data)
+                    .addOnSuccessListener(result -> {
+                        if (callback != null) callback.onComplete(true, "Appointment cancelled successfully");
+                    })
+                    .addOnFailureListener(e -> {
+                        if (callback != null) {
+                            String message = e.getMessage();
+                            callback.onComplete(false, message != null ? message : "Failed to cancel appointment");
+                        }
+                    });
+        } else if (Appointment.STATUS_COMPLETED.equals(newStatus)
+                || Appointment.STATUS_NO_SHOW.equals(newStatus)
+                || Appointment.STATUS_EXPIRED.equals(newStatus)) {
+            // Complete/NoShow/Expired status updates are direct Firestore updates (no slot lock changes)
+            String currentUid = getCurrentUserUid();
+            if (currentUid == null) {
+                if (callback != null) callback.onComplete(false, "User not authenticated");
+                return;
+            }
+
+            Map<String, Object> update = new HashMap<>();
+            update.put("status", newStatus);
+            update.put("updatedAt", System.currentTimeMillis());
+            update.put("statusChangedAt", System.currentTimeMillis());
+            update.put("statusChangedBy", currentUid);
+
+            firestore.collection(APPOINTMENTS_COLLECTION)
+                    .document(appointmentId)
+                    .update(update)
+                    .addOnSuccessListener(unused -> {
+                        if (callback != null) callback.onComplete(true, "Appointment status updated");
+                    })
+                    .addOnFailureListener(e -> {
+                        if (callback != null) {
+                            callback.onComplete(false, e.getMessage());
+                        }
+                    });
+        } else {
+            if (callback != null) callback.onComplete(false, "Invalid status transition");
+        }
     }
 
     public void fetchUserRole(String uid, RoleCallback callback) {
@@ -1102,6 +1217,11 @@ public class AppRepository {
         }
 
         String patientName = getCurrentUserDisplayName();
+        long startAt = parseDateTimeToEpochMs(date, time);
+        // Default 1-hour slot when end not known; can be refined from slot template later.
+        long endAt = startAt > 0 ? startAt + (60 * 60 * 1000L) : 0;
+        String slotKey = buildSlotKey(doctor.id, startAt);
+
         Appointment appointment = new Appointment(
                 appointmentId,
                 uid,
@@ -1111,8 +1231,14 @@ public class AppRepository {
                 doctor.hospital,
                 date,
                 time,
+                startAt,
+                endAt,
+                java.util.TimeZone.getDefault().getID(),
                 Appointment.STATUS_UPCOMING,
-                patientName
+                patientName,
+                System.currentTimeMillis(),
+                System.currentTimeMillis(),
+                uid
         );
 
         Task<Void> rtdbTask = appointmentsRef.child(appointmentId).setValue(appointment);
@@ -1122,7 +1248,7 @@ public class AppRepository {
 
         Tasks.whenAll(rtdbTask, firestoreTask)
                 .addOnSuccessListener(unused -> {
-                    saveDoctorPatientReference(doctor.id, uid, patientName, date, Appointment.STATUS_UPCOMING, null);
+                    saveDoctorPatientReference(doctor.id, uid, patientName, date, Appointment.STATUS_UPCOMING, startAt, null);
                     if (callback != null) {
                         callback.onComplete(true, null);
                     }
@@ -1134,16 +1260,34 @@ public class AppRepository {
                 });
     }
 
-    public void rescheduleAppointment(String appointmentId, String date, String time, CompletionCallback callback) {
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("date", date);
-        updates.put("time", time);
-        updates.put("status", Appointment.STATUS_UPCOMING);
+    public void rescheduleAppointment(String appointmentId, String newDate, String newTime, @Nullable CompletionCallback callback) {
+        if (appointmentId == null || appointmentId.trim().isEmpty()) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid appointment reference");
+            }
+            return;
+        }
 
-        Task<Void> rtdbTask = appointmentsRef.child(appointmentId).updateChildren(updates);
+        long startAt = parseDateTimeToEpochMs(newDate, newTime);
+        long endAt = startAt > 0 ? startAt + (60 * 60 * 1000L) : 0;
+        long now = System.currentTimeMillis();
+        String actor = getCurrentUserUid();
+
+        Map<String, Object> update = new HashMap<>();
+        update.put("date", newDate);
+        update.put("time", newTime);
+        update.put("startAt", startAt);
+        update.put("endAt", endAt);
+        update.put("updatedAt", now);
+        update.put("status", Appointment.STATUS_UPCOMING);
+        if (actor != null && !actor.trim().isEmpty()) {
+            update.put("statusChangedBy", actor);
+        }
+
+        Task<Void> rtdbTask = appointmentsRef.child(appointmentId).updateChildren(update);
         Task<Void> firestoreTask = firestore.collection(APPOINTMENTS_COLLECTION)
                 .document(appointmentId)
-                .update(updates);
+                .set(update, SetOptions.merge());
 
         Tasks.whenAll(rtdbTask, firestoreTask)
                 .addOnSuccessListener(unused -> {
@@ -1156,6 +1300,15 @@ public class AppRepository {
                         callback.onComplete(false, e.getMessage());
                     }
                 });
+    }
+
+
+
+    // Helper to get doctorId for an appointment (best-effort, for reference updates).
+    private String doctorIdFromAppointment(String appointmentId) {
+        if (appointmentId == null) return null;
+        // In a real implementation, fetch appointment from cache/DB. For now, return null and skip update.
+        return null;
     }
 
     @Nullable
@@ -1176,5 +1329,79 @@ public class AppRepository {
             return "";
         }
         return value.toLowerCase(Locale.ROOT);
+    }
+
+    // NEW: Build a stable slot key for locking and overlap checks.
+    // Format: YYYYMMDD-HHMM-doctorId (uses UTC-normalized start time).
+    private String buildSlotKey(String doctorId, long startAtEpochMs) {
+        if (doctorId == null || startAtEpochMs <= 0) {
+            return null;
+        }
+        try {
+            java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+            cal.setTimeInMillis(startAtEpochMs);
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US);
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            return sdf.format(cal.getTime()) + "-" + doctorId;
+        } catch (Exception e) {
+            return doctorId + "-" + startAtEpochMs;
+        }
+    }
+
+    // NEW: Parse legacy "hh:mm AM/PM" time string into minutes since midnight.
+    // Returns -1 on parse failure.
+    private int parseTimeToMinutes(String time) {
+        if (time == null || time.trim().isEmpty()) {
+            return -1;
+        }
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US);
+            java.util.Date d = sdf.parse(time.trim());
+            if (d == null) return -1;
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(d);
+            return cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    // NEW: Combine date label (e.g. "Mon, 05 Apr") and time string into epoch ms.
+    // Uses device default timezone for display; returns UTC epoch ms.
+    private long parseDateTimeToEpochMs(String dateLabel, String time) {
+        if (dateLabel == null || time == null) {
+            return 0;
+        }
+        try {
+            // Try parsing "dd MMM" format first (from DateOption.dateLabel)
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMM", java.util.Locale.US);
+            sdf.setTimeZone(java.util.TimeZone.getDefault());
+            java.util.Date day = sdf.parse(dateLabel.replaceAll("^\\w+,\\s*", "")); // strip leading weekday if present
+            if (day == null) {
+                // fallback: try full "EEE, dd MMM"
+                sdf = new java.text.SimpleDateFormat("EEE, dd MMM", java.util.Locale.US);
+                sdf.setTimeZone(java.util.TimeZone.getDefault());
+                day = sdf.parse(dateLabel);
+            }
+            if (day == null) return 0;
+
+            // parse time
+            java.text.SimpleDateFormat tf = new java.text.SimpleDateFormat("hh:mm a", java.util.Locale.US);
+            tf.setTimeZone(java.util.TimeZone.getDefault());
+            java.util.Date t = tf.parse(time.trim());
+            if (t == null) return 0;
+
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(day);
+            java.util.Calendar tcal = java.util.Calendar.getInstance();
+            tcal.setTime(t);
+            cal.set(java.util.Calendar.HOUR_OF_DAY, tcal.get(java.util.Calendar.HOUR_OF_DAY));
+            cal.set(java.util.Calendar.MINUTE, tcal.get(java.util.Calendar.MINUTE));
+            cal.set(java.util.Calendar.SECOND, 0);
+            cal.set(java.util.Calendar.MILLISECOND, 0);
+            return cal.getTimeInMillis();
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }

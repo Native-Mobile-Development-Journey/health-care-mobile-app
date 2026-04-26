@@ -36,7 +36,7 @@
                     android:background="@android:color/transparent"
                     android:contentDescription="@string/content_back"
                     android:src="@android:drawable/ic_media_previous"
-                    android:tint="@color/base_white" />
+                    app:tint="@color/base_white" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -59,7 +59,7 @@
                             android:layout_gravity="center"
                             android:contentDescription="@string/content_doctor_avatar"
                             android:src="@android:drawable/ic_menu_gallery"
-                            android:tint="@color/neutral_600" />
+                            app:tint="@color/neutral_600" />
                     </FrameLayout>
 
                     <TextView
@@ -69,6 +69,15 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_8"
                         android:text="@string/doctor_default_name"
+                        android:textColor="@color/base_white" />
+
+                    <TextView
+                        android:id="@+id/text_detail_specialty"
+                        style="@style/Text.SMD.Regular14"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:text="@string/specialty_default"
                         android:textColor="@color/base_white" />
                 </LinearLayout>
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/item_setting_option_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -28,7 +29,7 @@
                 android:layout_height="@dimen/icon_size_24"
                 android:layout_gravity="center"
                 android:src="@android:drawable/ic_menu_manage"
-                android:tint="@color/neutral_500" />
+                app:tint="@color/neutral_500" />
         </FrameLayout>
 
         <LinearLayout
@@ -60,7 +61,7 @@
             android:layout_width="@dimen/icon_size_24"
             android:layout_height="@dimen/icon_size_24"
             android:src="@android:drawable/arrow_down_float"
-            android:tint="@color/neutral_400" />
+            app:tint="@color/neutral_400" />
 
     </LinearLayout>
 

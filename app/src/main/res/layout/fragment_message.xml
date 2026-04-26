@@ -119,7 +119,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/send_message"
             android:src="@android:drawable/ic_menu_send"
-            android:tint="@color/primary_500" />
+            app:tint="@color/primary_500" />
 
     </LinearLayout>
 

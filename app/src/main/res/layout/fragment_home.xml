@@ -54,7 +54,7 @@
                             android:layout_height="@dimen/icon_size_24"
                             android:layout_gravity="center"
                             android:src="@android:drawable/ic_menu_gallery"
-                            android:tint="@color/neutral_600" />
+                            app:tint="@color/neutral_600" />
                     </FrameLayout>
 
                     <LinearLayout
@@ -85,7 +85,7 @@
                         android:layout_height="@dimen/icon_size_24"
                         android:contentDescription="@string/content_notification"
                         android:src="@android:drawable/ic_dialog_info"
-                        android:tint="@color/base_white" />
+                        app:tint="@color/base_white" />
 
                 </LinearLayout>
 

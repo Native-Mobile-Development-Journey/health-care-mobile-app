@@ -27,7 +27,7 @@
             android:layout_gravity="center"
             android:contentDescription="@string/content_service_item"
             android:src="@android:drawable/ic_menu_info_details"
-            android:tint="@color/neutral_400" />
+            app:tint="@color/neutral_400" />
     </FrameLayout>
 
     <androidx.appcompat.widget.AppCompatTextView

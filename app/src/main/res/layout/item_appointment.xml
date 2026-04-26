@@ -58,7 +58,7 @@
                         android:layout_width="@dimen/icon_size_12"
                         android:layout_height="@dimen/icon_size_12"
                         android:src="@android:drawable/ic_menu_mylocation"
-                        android:tint="@color/blue_500" />
+                        app:tint="@color/blue_500" />
 
                     <TextView
                         android:id="@+id/text_appointment_hospital"
@@ -115,7 +115,7 @@
                         android:layout_width="@dimen/icon_size_14"
                         android:layout_height="@dimen/icon_size_14"
                         android:src="@android:drawable/ic_menu_recent_history"
-                        android:tint="@color/neutral_500" />
+                        app:tint="@color/neutral_500" />
 
                     <TextView
                         android:id="@+id/text_appointment_time"
@@ -137,7 +137,7 @@
                         android:layout_width="@dimen/icon_size_14"
                         android:layout_height="@dimen/icon_size_14"
                         android:src="@android:drawable/ic_menu_my_calendar"
-                        android:tint="@color/neutral_500" />
+                        app:tint="@color/neutral_500" />
 
                     <TextView
                         android:id="@+id/text_appointment_date"

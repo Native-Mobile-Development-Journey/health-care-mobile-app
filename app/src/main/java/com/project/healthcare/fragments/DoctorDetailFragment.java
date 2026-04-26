@@ -339,7 +339,10 @@ public class DoctorDetailFragment extends Fragment {
         List<TimeOption> timeOptions = new ArrayList<>();
         for (DoctorAvailabilitySlot slot : availabilitySlots) {
             if (selectedDay.dayLabel != null && selectedDay.dayLabel.equals(slot.dayLabel)) {
-                timeOptions.add(new TimeOption(slot.startTime));
+                // Only show active, non-duplicate display times; canonical checks happen on booking.
+                if (slot.isActive && slot.startTime != null) {
+                    timeOptions.add(new TimeOption(slot.startTime));
+                }
             }
         }
         timeOptionAdapter.submitList(timeOptions);
@@ -460,6 +463,7 @@ public class DoctorDetailFragment extends Fragment {
             return;
         }
 
+        // Fetch patient appointments to check patient-side conflicts
         repository.getPatientAppointments(patientUid, new AppRepository.ListCallback<Appointment>() {
             @Override
             public void onData(List<Appointment> items) {
@@ -474,12 +478,44 @@ public class DoctorDetailFragment extends Fragment {
                     if (Appointment.STATUS_CANCELED.equalsIgnoreCase(appointment.normalizedStatus())) {
                         continue;
                     }
+                    // legacy string match (kept for compatibility)
                     if (date.equals(appointment.date) && time.equals(appointment.time)) {
                         conflict = true;
                         break;
                     }
                 }
-                callback.onCheckComplete(conflict);
+
+                // Also check doctor-side conflicts: ensure selected time is within an available slot
+                // and that doctor doesn't already have a conflicting UPCOMING appointment at that time.
+                if (!conflict && selectedDoctor != null) {
+                    final boolean hasPatientConflict = conflict;
+                    repository.getDoctorAppointments(selectedDoctor.id, new AppRepository.ListCallback<Appointment>() {
+                        @Override
+                        public void onData(List<Appointment> doctorAppts) {
+                            boolean doctorConflict = false;
+                            for (Appointment a : doctorAppts) {
+                                if (a == null || a.id == null) continue;
+                                if (currentAppointmentId != null && currentAppointmentId.equals(a.id)) continue;
+                                if (Appointment.STATUS_CANCELED.equalsIgnoreCase(a.normalizedStatus())) continue;
+                                if (Appointment.STATUS_COMPLETED.equalsIgnoreCase(a.normalizedStatus())) continue;
+                                // canonical overlap check when possible
+                                if (date.equals(a.date) && time.equals(a.time)) {
+                                    doctorConflict = true;
+                                    break;
+                                }
+                            }
+                            callback.onCheckComplete(hasPatientConflict || doctorConflict);
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            // fallback: report client-side conflict only
+                            callback.onCheckComplete(hasPatientConflict);
+                        }
+                    });
+                } else {
+                    callback.onCheckComplete(conflict);
+                }
             }
 
             @Override
