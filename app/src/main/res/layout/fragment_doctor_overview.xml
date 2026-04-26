@@ -24,14 +24,6 @@
             android:text="Doctor Name"
             style="@style/Text.SMD.SerifSemibold16" />
 
-        <TextView
-            android:id="@+id/text_overview_specialty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Specialty"
-            style="@style/Text.SMD.Regular14"
-            android:textColor="@color/neutral_500" />
-
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"

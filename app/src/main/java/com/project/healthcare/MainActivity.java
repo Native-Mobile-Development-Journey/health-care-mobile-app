@@ -132,9 +132,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void openDoctorDetail(@Nullable String doctorId, @Nullable String appointmentId) {
+        openDoctorDetail(doctorId, appointmentId, null);
+    }
+
+    public void openDoctorDetail(@Nullable String doctorId, @Nullable String appointmentId, @Nullable com.project.healthcare.data.models.Doctor doctor) {
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_container, DoctorDetailFragment.newInstance(doctorId, appointmentId), "doctor_detail")
+                .replace(R.id.fragment_container, DoctorDetailFragment.newInstance(doctorId, appointmentId, doctor), "doctor_detail")
                 .addToBackStack("doctor_detail")
                 .commit();
         bottomNavigationView.setVisibility(View.GONE);

@@ -36,12 +36,15 @@
     <string name="status_upcoming">Upcoming</string>
     <string name="status_all">All</string>
     <string name="status_completed">Completed</string>
+    <string name="change_appointment_status_title">Change appointment status</string>
+    <string name="appointment_status_updated">Appointment status updated to %1$s.</string>
 
     <string name="action_reschedule">Reschedule</string>
     <string name="action_new_appointment">Make new appointment</string>
 
     <string name="about_doctor">About doctor</string>
     <string name="about_doctor_loading">Doctor profile is loading.</string>
+    <string name="about_doctor_unavailable">Doctor profile details are not available yet.</string>
 
     <string name="experience">Experience</string>
     <string name="patients">Patient</string>

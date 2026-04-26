@@ -22,7 +22,6 @@ import com.project.healthcare.ui.adapter.DateOptionAdapter;
 import com.project.healthcare.ui.adapter.TimeOptionAdapter;
 import com.project.healthcare.ui.model.DateOption;
 import com.project.healthcare.ui.model.TimeOption;
-import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -34,14 +33,14 @@ public class DoctorDetailFragment extends Fragment {
 
     private static final String ARG_DOCTOR_ID = "arg_doctor_id";
     private static final String ARG_APPOINTMENT_ID = "arg_appointment_id";
+    private static final String ARG_DOCTOR_OBJECT = "arg_doctor_object";
+    private static final String TAG = "DoctorDetailFragment";
 
     private final AppRepository repository = AppRepository.getInstance();
 
     private DateOptionAdapter dateOptionAdapter;
     private TimeOptionAdapter timeOptionAdapter;
-    private ValueEventListener doctorsListener;
 
-    private static final String TAG = "DoctorDetailFragment";
     private final List<DoctorAvailabilitySlot> availabilitySlots = new ArrayList<>();
     private String doctorId;
     private String appointmentId;
@@ -60,10 +59,17 @@ public class DoctorDetailFragment extends Fragment {
     }
 
     public static DoctorDetailFragment newInstance(@Nullable String doctorId, @Nullable String appointmentId) {
+        return newInstance(doctorId, appointmentId, null);
+    }
+
+    public static DoctorDetailFragment newInstance(@Nullable String doctorId, @Nullable String appointmentId, @Nullable Doctor doctor) {
         DoctorDetailFragment fragment = new DoctorDetailFragment();
         Bundle args = new Bundle();
         args.putString(ARG_DOCTOR_ID, doctorId);
         args.putString(ARG_APPOINTMENT_ID, appointmentId);
+        if (doctor != null) {
+            args.putSerializable(ARG_DOCTOR_OBJECT, doctor);
+        }
         fragment.setArguments(args);
         return fragment;
     }
@@ -74,6 +80,8 @@ public class DoctorDetailFragment extends Fragment {
         if (getArguments() != null) {
             doctorId = getArguments().getString(ARG_DOCTOR_ID);
             appointmentId = getArguments().getString(ARG_APPOINTMENT_ID);
+            selectedDoctor = (Doctor) getArguments().getSerializable(ARG_DOCTOR_OBJECT);
+            Log.d(TAG, "onCreate: Retrieved doctor from bundle - " + (selectedDoctor != null ? selectedDoctor.name : "null"));
         }
     }
 
@@ -98,10 +106,19 @@ public class DoctorDetailFragment extends Fragment {
             backButton.setOnClickListener(v -> requireActivity().getOnBackPressedDispatcher().onBackPressed());
         }
 
-        if (doctorId != null) {
-            loadDoctorAvailability(doctorId);
+        if (doctorId == null || doctorId.trim().isEmpty()) {
+            Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
+            return;
         }
-        observeDoctors();
+
+        // If we already have the doctor object from the bundle, use it directly
+        if (selectedDoctor != null) {
+            Log.d(TAG, "Using doctor from bundle: " + selectedDoctor.name);
+            bindDoctor(selectedDoctor);
+        } else {
+            Log.d(TAG, "Doctor not in bundle, fetching from Firestore");
+            loadDoctorProfileAndBind(doctorId);
+        }
     }
 
     private void setupDateRecycler(View root) {
@@ -138,67 +155,125 @@ public class DoctorDetailFragment extends Fragment {
         return options;
     }
 
-    private void observeDoctors() {
-        doctorsListener = repository.observeDoctors(new AppRepository.ListCallback<Doctor>() {
+    private void loadDoctorProfileAndBind(@NonNull String targetDoctorId) {
+        Log.d(TAG, "loadDoctorProfileAndBind: Starting for doctor ID " + targetDoctorId);
+        repository.getDoctorProfile(targetDoctorId, new AppRepository.DoctorCallback() {
             @Override
-            public void onData(List<Doctor> items) {
-                Log.d(TAG, "observeDoctors loaded count=" + items.size() + " doctorId=" + doctorId);
-                Doctor doctor = repository.findDoctorById(items, doctorId);
+            public void onDoctorLoaded(@Nullable Doctor doctor) {
+                Log.d(TAG, "getDoctorProfile callback: doctor = " + (doctor != null ? doctor.name : "null"));
                 if (doctor != null) {
                     selectedDoctor = doctor;
+                    Log.d(TAG, "Found doctor in 'doctors' collection: " + doctor.name);
                     bindDoctor(doctor);
                     return;
                 }
-                // Always try to load availability even when the doctor profile is not available
-                loadDoctorAvailability(doctorId);
-                fetchDoctorFromFirestoreUsers();
+                Log.d(TAG, "Doctor not found in 'doctors' collection, trying 'users' collection");
+                loadDoctorProfileFromUsers(targetDoctorId);
             }
 
             @Override
             public void onError(String message) {
-                if (isAdded()) {
-                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-                }
-                loadDoctorAvailability(doctorId);
-                fetchDoctorFromFirestoreUsers();
+                Log.e(TAG, "getDoctorProfile error: " + message);
+                loadDoctorProfileFromUsers(targetDoctorId);
             }
         });
     }
 
-    private void fetchDoctorFromFirestoreUsers() {
-        if (doctorId == null) {
-            return;
-        }
-        repository.fetchDoctorProfileFromFirestoreUsers(doctorId, new AppRepository.DoctorCallback() {
+    private void loadDoctorProfileFromUsers(@NonNull String targetDoctorId) {
+        Log.d(TAG, "loadDoctorProfileFromUsers: Starting for doctor ID " + targetDoctorId);
+        repository.fetchDoctorProfileFromFirestoreUsers(targetDoctorId, new AppRepository.DoctorCallback() {
             @Override
             public void onDoctorLoaded(@Nullable Doctor doctor) {
+                Log.d(TAG, "fetchDoctorProfileFromFirestoreUsers callback: doctor = " + (doctor != null ? doctor.name : "null"));
                 if (doctor == null) {
+                    Log.w(TAG, "Doctor not found in 'users' collection either");
                     if (isAdded()) {
-                        Toast.makeText(requireContext(), "Doctor profile not found", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
+                    }
+                    loadDoctorAvailability(targetDoctorId);
+                    // Set placeholder text
+                    if (aboutText != null) {
+                        aboutText.setText(getString(R.string.about_doctor_unavailable));
+                    }
+                    // Set placeholder stats
+                    if (doctorNameText != null) {
+                        doctorNameText.setText(getString(R.string.doctor_default_name));
+                    }
+                    if (specialtyText != null) {
+                        specialtyText.setText(getString(R.string.specialty_default));
                     }
                     return;
                 }
+                Log.d(TAG, "Found doctor in 'users' collection: name=" + doctor.name + ", specialty=" + doctor.specialty);
                 selectedDoctor = doctor;
                 bindDoctor(doctor);
             }
 
             @Override
             public void onError(String message) {
+                Log.e(TAG, "fetchDoctorProfileFromFirestoreUsers error: " + message);
                 if (isAdded()) {
-                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Failed to load doctor: " + message, Toast.LENGTH_SHORT).show();
+                }
+                loadDoctorAvailability(targetDoctorId);
+                if (aboutText != null) {
+                    aboutText.setText(getString(R.string.about_doctor_unavailable));
                 }
             }
         });
     }
 
     private void bindDoctor(Doctor doctor) {
-        doctorNameText.setText(doctor.name);
-        specialtyText.setText(doctor.specialty);
-        experienceText.setText(String.valueOf(doctor.experienceYears));
-        patientsText.setText(String.valueOf(doctor.patientCount));
-        ratingText.setText(String.format(Locale.getDefault(), "%.1f", doctor.rating));
-        aboutText.setText(doctor.bio);
-        loadDoctorAvailability(doctor.id);
+        Log.d(TAG, "bindDoctor: Binding doctor data - name=" + doctor.name + 
+              ", specialty=" + doctor.specialty + 
+              ", experience=" + doctor.experienceYears +
+              ", patients=" + doctor.patientCount +
+              ", rating=" + doctor.rating +
+              ", bio=" + (doctor.bio != null ? doctor.bio.substring(0, Math.min(50, doctor.bio.length())) : "null"));
+        
+        String displayName = valueOrFallback(doctor.name, getString(R.string.doctor_default_name));
+        String displaySpecialty = valueOrFallback(doctor.specialty, getString(R.string.specialty_default));
+        String displayExperience = String.valueOf(Math.max(0, doctor.experienceYears));
+        String displayPatients = String.valueOf(Math.max(0, doctor.patientCount));
+        String displayRating = String.format(Locale.getDefault(), "%.1f", Math.max(0d, doctor.rating));
+        String displayAbout = valueOrFallback(doctor.bio, getString(R.string.about_doctor_unavailable));
+        
+        Log.d(TAG, "bindDoctor: Setting UI values - displayName=" + displayName + 
+              ", displaySpecialty=" + displaySpecialty +
+              ", displayExperience=" + displayExperience +
+              ", displayRating=" + displayRating);
+        
+        if (doctorNameText != null) {
+            doctorNameText.setText(displayName);
+        }
+        if (specialtyText != null) {
+            specialtyText.setText(displaySpecialty);
+        }
+        if (experienceText != null) {
+            experienceText.setText(displayExperience);
+        }
+        if (patientsText != null) {
+            patientsText.setText(displayPatients);
+        }
+        if (ratingText != null) {
+            ratingText.setText(displayRating);
+        }
+        if (aboutText != null) {
+            aboutText.setText(displayAbout);
+        }
+
+        String availabilityDoctorId = doctor.id != null && !doctor.id.trim().isEmpty() ? doctor.id : doctorId;
+        if (availabilityDoctorId != null) {
+            loadDoctorAvailability(availabilityDoctorId);
+        }
+    }
+
+    @NonNull
+    private String valueOrFallback(@Nullable String value, @NonNull String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        return value.trim();
     }
 
     private void loadDoctorAvailability(String doctorId) {
@@ -308,7 +383,7 @@ public class DoctorDetailFragment extends Fragment {
                 }
 
                 Toast.makeText(requireContext(), R.string.schedule_confirming, Toast.LENGTH_SHORT).show();
-                repository.fetchDoctorProfileFromFirestoreUsers(doctorId, new AppRepository.DoctorCallback() {
+                loadDoctorProfileForBooking(doctorId, new AppRepository.DoctorCallback() {
                     @Override
                     public void onDoctorLoaded(@Nullable Doctor doctor) {
                         if (!isAdded()) {
@@ -332,6 +407,24 @@ public class DoctorDetailFragment extends Fragment {
                     }
                 });
             });
+        });
+    }
+
+    private void loadDoctorProfileForBooking(@NonNull String targetDoctorId, AppRepository.DoctorCallback callback) {
+        repository.getDoctorProfile(targetDoctorId, new AppRepository.DoctorCallback() {
+            @Override
+            public void onDoctorLoaded(@Nullable Doctor doctor) {
+                if (doctor != null) {
+                    callback.onDoctorLoaded(doctor);
+                    return;
+                }
+                repository.fetchDoctorProfileFromFirestoreUsers(targetDoctorId, callback);
+            }
+
+            @Override
+            public void onError(String message) {
+                repository.fetchDoctorProfileFromFirestoreUsers(targetDoctorId, callback);
+            }
         });
     }
 
@@ -399,8 +492,5 @@ public class DoctorDetailFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if (doctorsListener != null) {
-            repository.removeDoctorsListener(doctorsListener);
-        }
     }
 }

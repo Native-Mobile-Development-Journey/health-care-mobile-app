@@ -22,6 +22,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.functions.FirebaseFunctions;
 import com.google.firebase.functions.HttpsCallableResult;
@@ -627,6 +628,66 @@ public class AppRepository {
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
+    @Nullable
+    public ListenerRegistration observeDoctorAppointmentsFromFirestore(@Nullable String doctorId, ListCallback<Appointment> callback) {
+        if (doctorId == null || doctorId.trim().isEmpty()) {
+            callback.onData(new ArrayList<>());
+            return null;
+        }
+
+        return firestore.collection(APPOINTMENTS_COLLECTION)
+                .whereEqualTo("doctorId", doctorId)
+                .addSnapshotListener((querySnapshot, error) -> {
+                    if (error != null) {
+                        callback.onError(error.getMessage());
+                        return;
+                    }
+
+                    List<Appointment> appointments = new ArrayList<>();
+                    if (querySnapshot != null) {
+                        querySnapshot.getDocuments().forEach(document -> {
+                            Appointment appointment = document.toObject(Appointment.class);
+                            if (appointment != null) {
+                                appointment.id = document.getId();
+                                appointments.add(appointment);
+                            }
+                        });
+                    }
+                    Collections.sort(appointments, Comparator.comparing(a -> safeLower(a.date + " " + a.time)));
+                    callback.onData(appointments);
+                });
+    }
+
+    @Nullable
+    public ListenerRegistration observePatientAppointmentsFromFirestore(@Nullable String patientUid, ListCallback<Appointment> callback) {
+        if (patientUid == null || patientUid.trim().isEmpty()) {
+            callback.onData(new ArrayList<>());
+            return null;
+        }
+
+        return firestore.collection(APPOINTMENTS_COLLECTION)
+                .whereEqualTo("patientUid", patientUid)
+                .addSnapshotListener((querySnapshot, error) -> {
+                    if (error != null) {
+                        callback.onError(error.getMessage());
+                        return;
+                    }
+
+                    List<Appointment> appointments = new ArrayList<>();
+                    if (querySnapshot != null) {
+                        querySnapshot.getDocuments().forEach(document -> {
+                            Appointment appointment = document.toObject(Appointment.class);
+                            if (appointment != null) {
+                                appointment.id = document.getId();
+                                appointments.add(appointment);
+                            }
+                        });
+                    }
+                    Collections.sort(appointments, Comparator.comparing(a -> safeLower(a.date + " " + a.time)));
+                    callback.onData(appointments);
+                });
+    }
+
     public void deleteAppointment(String appointmentId, @Nullable CompletionCallback callback) {
         if (appointmentId == null || appointmentId.trim().isEmpty()) {
             if (callback != null) {
@@ -639,6 +700,35 @@ public class AppRepository {
         Task<Void> firestoreTask = firestore.collection(APPOINTMENTS_COLLECTION)
                 .document(appointmentId)
                 .delete();
+
+        Tasks.whenAll(rtdbTask, firestoreTask)
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
+    }
+
+    public void updateAppointmentStatus(String appointmentId, String status, @Nullable CompletionCallback callback) {
+        if (appointmentId == null || appointmentId.trim().isEmpty()) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid appointment reference");
+            }
+            return;
+        }
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", status);
+
+        Task<Void> rtdbTask = appointmentsRef.child(appointmentId).updateChildren(updates);
+        Task<Void> firestoreTask = firestore.collection(APPOINTMENTS_COLLECTION)
+                .document(appointmentId)
+                .update(updates);
 
         Tasks.whenAll(rtdbTask, firestoreTask)
                 .addOnSuccessListener(unused -> {
@@ -762,6 +852,36 @@ public class AppRepository {
     public void removeAppointmentsListener(String uid, ValueEventListener listener) {
         appointmentsRef.removeEventListener(listener);
         appointmentsRef.orderByChild("patientUid").equalTo(uid).removeEventListener(listener);
+        appointmentsRef.orderByChild("doctorId").equalTo(uid).removeEventListener(listener);
+    }
+
+    public ValueEventListener observeDoctorAppointments(String doctorId, ListCallback<Appointment> callback) {
+        Query query = appointmentsRef.orderByChild("doctorId").equalTo(doctorId);
+        ValueEventListener listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<Appointment> appointments = new ArrayList<>();
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    Appointment appointment = child.getValue(Appointment.class);
+                    if (appointment == null) {
+                        continue;
+                    }
+                    if (appointment.id == null || appointment.id.isEmpty()) {
+                        appointment.id = child.getKey();
+                    }
+                    appointments.add(appointment);
+                }
+                Collections.sort(appointments, Comparator.comparing(a -> safeLower(a.date + " " + a.time)));
+                callback.onData(appointments);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onError(error.getMessage());
+            }
+        };
+        query.addValueEventListener(listener);
+        return listener;
     }
 
     public ValueEventListener observeConversations(String uid, ListCallback<Conversation> callback) {

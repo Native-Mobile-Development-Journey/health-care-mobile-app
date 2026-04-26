@@ -2,8 +2,12 @@ package com.project.healthcare.data.models;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.io.Serializable;
+
 @IgnoreExtraProperties
-public class Doctor {
+public class Doctor implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public String id;
     public String name;

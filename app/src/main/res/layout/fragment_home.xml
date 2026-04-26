@@ -179,90 +179,15 @@
                     app:strokeColor="@color/neutral_200"
                     app:strokeWidth="1dp">
 
-                    <LinearLayout
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recycler_today_appointments"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="@dimen/space_12">
+                        android:nestedScrollingEnabled="false"
+                        android:padding="@dimen/space_12"
+                        tools:itemCount="1"
+                        tools:listitem="@layout/item_appointment" />
 
-                        <View
-                            android:layout_width="56dp"
-                            android:layout_height="66dp"
-                            android:background="@drawable/bg_doctor_placeholder" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/space_8"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_small_location_tag"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingStart="@dimen/space_4"
-                                android:paddingTop="@dimen/space_2"
-                                android:paddingEnd="@dimen/space_4"
-                                android:paddingBottom="@dimen/space_2">
-
-                                <ImageView
-                                    android:layout_width="@dimen/icon_size_12"
-                                    android:layout_height="@dimen/icon_size_12"
-                                    android:src="@android:drawable/ic_menu_mylocation"
-                                    android:tint="@color/blue_500" />
-
-                                <TextView
-                                    android:id="@+id/text_schedule_hospital"
-                                    style="@style/Text.SMD.Regular12"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="@dimen/space_4"
-                                    android:text="@string/hospital_default"
-                                    android:textColor="@color/blue_500" />
-                            </LinearLayout>
-
-                            <TextView
-                                android:id="@+id/text_schedule_doctor"
-                                style="@style/Text.SMD.TitleMedium16"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="@dimen/space_2"
-                                android:text="@string/doctor_default_name" />
-
-                            <TextView
-                                android:id="@+id/text_schedule_specialty"
-                                style="@style/Text.SMD.Regular10"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/specialty_default" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/text_schedule_date"
-                                style="@style/Text.SMD.Regular12"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/no_date_selected" />
-
-                            <TextView
-                                android:id="@+id/text_schedule_time"
-                                style="@style/Text.SMD.Regular12"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="@dimen/space_4"
-                                android:text="@string/no_time_selected" />
-                        </LinearLayout>
-
-                    </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <LinearLayout

@@ -21,7 +21,6 @@ import java.util.Locale;
 public class DoctorOverviewFragment extends Fragment {
 
     private TextView nameText;
-    private TextView specialtyText;
     private TextView experienceText;
     private TextView ratingText;
     private TextView patientsText;
@@ -36,14 +35,24 @@ public class DoctorOverviewFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         nameText = view.findViewById(R.id.text_overview_name);
-        specialtyText = view.findViewById(R.id.text_overview_specialty);
         experienceText = view.findViewById(R.id.text_overview_experience);
         ratingText = view.findViewById(R.id.text_overview_rating);
         patientsText = view.findViewById(R.id.text_overview_patients);
         upcomingText = view.findViewById(R.id.text_overview_upcoming);
         completedText = view.findViewById(R.id.text_overview_completed);
 
+        bindDefaultDoctorName();
         loadDoctorOverview();
+    }
+
+    private void bindDefaultDoctorName() {
+        String defaultName = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getDisplayName()
+                : null;
+        if (defaultName == null || defaultName.trim().isEmpty()) {
+            defaultName = getString(R.string.doctor_default_name);
+        }
+        nameText.setText(defaultName);
     }
 
     private void loadDoctorOverview() {
@@ -100,8 +109,17 @@ public class DoctorOverviewFragment extends Fragment {
     }
 
     private void bindDoctor(Doctor doctor) {
-        nameText.setText(doctor.name != null ? doctor.name : getString(R.string.doctor_default_name));
-        specialtyText.setText(doctor.specialty != null ? doctor.specialty : getString(R.string.specialty_default));
+        String name = doctor.name;
+        if (name == null || name.trim().isEmpty()) {
+            name = FirebaseAuth.getInstance().getCurrentUser() != null
+                    ? FirebaseAuth.getInstance().getCurrentUser().getDisplayName()
+                    : null;
+        }
+        if (name == null || name.trim().isEmpty()) {
+            name = getString(R.string.doctor_default_name);
+        }
+
+        nameText.setText(name);
         experienceText.setText(String.valueOf(doctor.experienceYears));
         ratingText.setText(String.format(Locale.getDefault(), "%.1f", doctor.rating));
         patientsText.setText(String.valueOf(doctor.patientCount));

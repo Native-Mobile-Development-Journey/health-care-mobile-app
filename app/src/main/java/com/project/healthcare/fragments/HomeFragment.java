@@ -21,6 +21,7 @@ import com.project.healthcare.R;
 import com.project.healthcare.data.AppRepository;
 import com.project.healthcare.data.models.Appointment;
 import com.project.healthcare.data.models.Doctor;
+import com.project.healthcare.ui.adapter.AppointmentAdapter;
 import com.project.healthcare.ui.adapter.DoctorAdapter;
 import com.project.healthcare.ui.adapter.ServiceAdapter;
 import com.project.healthcare.ui.model.ServiceItem;
@@ -55,15 +56,10 @@ public class HomeFragment extends Fragment {
 
     private TextView userNameText;
     private TextView doctorEmptyText;
-    private TextView scheduleDoctorText;
-    private TextView scheduleSpecialtyText;
-    private TextView scheduleHospitalText;
-    private TextView scheduleDateText;
-    private TextView scheduleTimeText;
+    private RecyclerView todayScheduleRecycler;
+    private AppointmentAdapter todayAppointmentAdapter;
     private TextView seeMoreButton;
     private TextInputEditText searchInput;
-    private View scheduleCard;
-    private Appointment selectedScheduleAppointment;
     private String uid;
 
     public HomeFragment() {
@@ -75,22 +71,17 @@ public class HomeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         userNameText = view.findViewById(R.id.text_user_name);
-        scheduleDoctorText = view.findViewById(R.id.text_schedule_doctor);
-        scheduleSpecialtyText = view.findViewById(R.id.text_schedule_specialty);
-        scheduleHospitalText = view.findViewById(R.id.text_schedule_hospital);
-        scheduleDateText = view.findViewById(R.id.text_schedule_date);
-        scheduleTimeText = view.findViewById(R.id.text_schedule_time);
+        todayScheduleRecycler = view.findViewById(R.id.recycler_today_appointments);
         searchInput = view.findViewById(R.id.input_home_search);
         seeMoreButton = view.findViewById(R.id.button_see_more_doctors);
-        scheduleCard = view.findViewById(R.id.card_schedule_today);
         doctorEmptyText = view.findViewById(R.id.text_home_doctor_empty);
 
         userNameText.setText(repository.getCurrentUserDisplayName());
 
         setupServices(view);
         setupDoctors(view);
+        setupTodaySchedule();
         setupSearch();
-        setupScheduleClick();
         setupSeeMore();
 
         uid = repository.getCurrentUserUid();
@@ -102,19 +93,24 @@ public class HomeFragment extends Fragment {
         RecyclerView servicesRecycler = root.findViewById(R.id.recycler_home_services);
         servicesRecycler.setLayoutManager(new GridLayoutManager(requireContext(), 4));
 
-        serviceAdapter = new ServiceAdapter(4, item ->
-                Toast.makeText(requireContext(), item.label + " selected", Toast.LENGTH_SHORT).show());
+        serviceAdapter = new ServiceAdapter(4, item -> {
+            if (item.enabled) {
+                Toast.makeText(requireContext(), item.label + " selected", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(requireContext(), item.label + " Service coming soon...", Toast.LENGTH_SHORT).show();
+            }
+        });
         servicesRecycler.setAdapter(serviceAdapter);
 
         List<ServiceItem> items = new ArrayList<>();
-        items.add(new ServiceItem(getString(R.string.service_emergency), android.R.drawable.ic_dialog_alert));
-        items.add(new ServiceItem(getString(R.string.service_hospital), android.R.drawable.ic_menu_compass));
-        items.add(new ServiceItem(getString(R.string.service_blood), android.R.drawable.ic_menu_edit));
-        items.add(new ServiceItem(getString(R.string.service_prescription), android.R.drawable.ic_menu_agenda));
-        items.add(new ServiceItem(getString(R.string.service_doctor), android.R.drawable.ic_menu_info_details));
-        items.add(new ServiceItem(getString(R.string.service_checkup), android.R.drawable.ic_menu_recent_history));
-        items.add(new ServiceItem(getString(R.string.service_location), android.R.drawable.ic_menu_mylocation));
-        items.add(new ServiceItem(getString(R.string.service_radiology), android.R.drawable.ic_menu_search));
+        items.add(new ServiceItem(getString(R.string.service_emergency), android.R.drawable.ic_dialog_alert, false));
+        items.add(new ServiceItem(getString(R.string.service_hospital), android.R.drawable.ic_menu_compass, false));
+        items.add(new ServiceItem(getString(R.string.service_blood), android.R.drawable.ic_menu_edit, false));
+        items.add(new ServiceItem(getString(R.string.service_prescription), android.R.drawable.ic_menu_agenda, false));
+        items.add(new ServiceItem(getString(R.string.service_doctor), android.R.drawable.ic_menu_info_details, true));
+        items.add(new ServiceItem(getString(R.string.service_checkup), android.R.drawable.ic_menu_recent_history, false));
+        items.add(new ServiceItem(getString(R.string.service_location), android.R.drawable.ic_menu_mylocation, false));
+        items.add(new ServiceItem(getString(R.string.service_radiology), android.R.drawable.ic_menu_search, false));
         serviceAdapter.submitList(items);
     }
 
@@ -143,18 +139,31 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void setupScheduleClick() {
-        scheduleCard.setOnClickListener(v -> {
-            if (selectedScheduleAppointment != null) {
-                openDoctorDetail(selectedScheduleAppointment.doctorId, selectedScheduleAppointment.id);
-            } else if (!allDoctors.isEmpty()) {
-                openDoctorDetail(allDoctors.get(0).id, null);
-            }
-        });
-    }
-
     private void setupSeeMore() {
         seeMoreButton.setOnClickListener(v -> showDoctorRecommendationSheet());
+    }
+
+    private void setupTodaySchedule() {
+        todayScheduleRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
+        todayAppointmentAdapter = new AppointmentAdapter(new AppointmentAdapter.OnAppointmentInteractionListener() {
+            @Override
+            public void onAppointmentOpen(Appointment appointment) {
+                openDoctorDetail(appointment.doctorId, appointment.id);
+            }
+
+            @Override
+            public void onAppointmentAction(Appointment appointment) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), appointment.normalizedStatus() + " action", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onAppointmentDelete(Appointment appointment) {
+                // no delete action in home schedule card
+            }
+        }, false);
+        todayScheduleRecycler.setAdapter(todayAppointmentAdapter);
     }
 
     private void fetchDoctorRecommendations() {
@@ -313,45 +322,23 @@ public class HomeFragment extends Fragment {
     }
 
     private void bindScheduleCard() {
-        Appointment todayAppointment = null;
-        Appointment upcoming = null;
         String currentDay = new SimpleDateFormat("EEE", Locale.getDefault()).format(new Date());
         String currentDate = new SimpleDateFormat("dd MMM", Locale.getDefault()).format(new Date());
 
+        List<Appointment> todayAppointments = new ArrayList<>();
         for (Appointment appointment : allAppointments) {
             if (appointment.date != null && (appointment.date.contains(currentDay) || appointment.date.contains(currentDate))) {
-                todayAppointment = appointment;
-                break;
-            }
-            if (upcoming == null && Appointment.STATUS_UPCOMING.equals(appointment.normalizedStatus())) {
-                upcoming = appointment;
+                todayAppointments.add(appointment);
             }
         }
 
-        Appointment displayAppointment = todayAppointment != null ? todayAppointment : upcoming;
-        if (displayAppointment == null && !allAppointments.isEmpty()) {
-            displayAppointment = allAppointments.get(0);
-        }
-
-        selectedScheduleAppointment = displayAppointment;
-        if (displayAppointment != null) {
-            scheduleDoctorText.setText(displayAppointment.doctorName);
-            scheduleSpecialtyText.setText(displayAppointment.specialty);
-            scheduleHospitalText.setText(displayAppointment.hospital);
-            scheduleDateText.setText(displayAppointment.date);
-            scheduleTimeText.setText(displayAppointment.time);
-            return;
-        }
-
-        scheduleDoctorText.setText(getString(R.string.schedule_no_appointment_today));
-        scheduleSpecialtyText.setText(getString(R.string.schedule_book_doctor));
-        scheduleHospitalText.setText(getString(R.string.hospital_default));
-        scheduleDateText.setText(getString(R.string.no_date_selected));
-        scheduleTimeText.setText(getString(R.string.no_time_selected));
+        todayAppointmentAdapter.submitList(todayAppointments);
     }
 
     private void openDoctorDetail(Doctor doctor) {
-        openDoctorDetail(doctor == null ? null : doctor.id, null);
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).openDoctorDetail(doctor == null ? null : doctor.id, null, doctor);
+        }
     }
 
     private void openDoctorDetail(@Nullable String doctorId, @Nullable String appointmentId) {

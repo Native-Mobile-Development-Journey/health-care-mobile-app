@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -51,20 +52,26 @@ public class ServiceAdapter extends RecyclerView.Adapter<ServiceAdapter.ServiceV
         holder.label.setText(item.label);
         holder.icon.setImageResource(item.iconRes);
 
-        boolean isSelected = position == selectedPosition;
+        boolean isSelected = item.enabled && position == selectedPosition;
         holder.iconContainer.setBackgroundResource(isSelected ? R.drawable.bg_service_tile_selected : R.drawable.bg_service_tile);
         holder.icon.setColorFilter(ContextCompat.getColor(holder.itemView.getContext(), isSelected ? R.color.base_white : R.color.neutral_400));
-        holder.label.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), isSelected ? R.color.primary_500 : R.color.base_black));
+        holder.label.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), item.enabled ? R.color.base_black : R.color.neutral_500));
+        holder.root.setAlpha(item.enabled ? 1f : 0.45f);
+        holder.root.setEnabled(item.enabled);
 
-        holder.root.setOnClickListener(v -> {
-            int previous = selectedPosition;
-            selectedPosition = holder.getBindingAdapterPosition();
-            if (previous != RecyclerView.NO_POSITION) {
-                notifyItemChanged(previous);
-            }
-            notifyItemChanged(selectedPosition);
-            listener.onServiceClick(item);
-        });
+        if (item.enabled) {
+            holder.root.setOnClickListener(v -> {
+                int previous = selectedPosition;
+                selectedPosition = holder.getBindingAdapterPosition();
+                if (previous != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(previous);
+                }
+                notifyItemChanged(selectedPosition);
+                listener.onServiceClick(item);
+            });
+        } else {
+            holder.root.setOnClickListener(v -> Toast.makeText(holder.itemView.getContext(), item.label + " Service coming soon...", Toast.LENGTH_SHORT).show());
+        }
     }
 
     @Override

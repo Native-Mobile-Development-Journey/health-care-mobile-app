@@ -20,7 +20,7 @@ import com.project.healthcare.data.models.Appointment;
 import com.project.healthcare.ui.adapter.AppointmentAdapter;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
     private final List<Appointment> filteredAppointments = new ArrayList<>();
 
     private AppointmentAdapter appointmentAdapter;
-    private ValueEventListener appointmentsListener;
+    private ListenerRegistration appointmentsListener;
     private String uid;
 
     private TextInputEditText searchInput;
@@ -112,7 +112,11 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
             emptyText.setVisibility(View.VISIBLE);
             return;
         }
-        repository.getPatientAppointments(uid, new AppRepository.ListCallback<Appointment>() {
+        if (appointmentsListener != null) {
+            appointmentsListener.remove();
+            appointmentsListener = null;
+        }
+        appointmentsListener = repository.observePatientAppointmentsFromFirestore(uid, new AppRepository.ListCallback<Appointment>() {
             @Override
             public void onData(List<Appointment> items) {
                 allAppointments.clear();
@@ -200,34 +204,39 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
         if (!isAdded() || appointment == null) {
             return;
         }
-        showDeleteConfirmation(appointment);
+        if (!Appointment.STATUS_UPCOMING.equals(appointment.normalizedStatus())) {
+            Toast.makeText(requireContext(), "Appointment cannot be modified after " + appointment.normalizedStatus(), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        showStatusChangeDialog(appointment);
     }
 
-    private void showDeleteConfirmation(Appointment appointment) {
+    private void showStatusChangeDialog(Appointment appointment) {
         androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                .setTitle(R.string.delete_appointment_title)
-                .setMessage(R.string.delete_appointment_message)
+                .setTitle(R.string.change_appointment_status_title)
+                .setItems(new CharSequence[]{getString(R.string.status_cancel)}, (d, which) -> {
+                    String newStatus = Appointment.STATUS_CANCELED;
+                    repository.updateAppointmentStatus(appointment.id, newStatus, (success, message) -> {
+                        if (!isAdded()) {
+                            return;
+                        }
+                        if (success) {
+                            requireActivity().runOnUiThread(() -> {
+                                appointment.status = newStatus;
+                                applyFilters();
+                                Toast.makeText(requireContext(), getString(R.string.appointment_status_updated, newStatus), Toast.LENGTH_SHORT).show();
+                            });
+                            return;
+                        }
+                        requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show());
+                    });
+                })
                 .setNegativeButton(R.string.cancel, (d, which) -> d.dismiss())
-                .setPositiveButton(R.string.delete, (d, which) -> repository.deleteAppointment(appointment.id, (success, message) -> {
-                    if (!isAdded()) {
-                        return;
-                    }
-                    if (success) {
-                        requireActivity().runOnUiThread(() -> {
-                            Toast.makeText(requireContext(), R.string.delete_appointment_success, Toast.LENGTH_SHORT).show();
-                            observeAppointments();
-                        });
-                        return;
-                    }
-                    requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show());
-                }))
                 .create();
 
         dialog.setOnShowListener(d -> {
             dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
                     .setTextColor(requireContext().getColor(R.color.primary_500));
-            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
-                    .setTextColor(requireContext().getColor(R.color.red_500));
         });
         dialog.show();
     }
@@ -241,8 +250,9 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if (appointmentsListener != null && uid != null) {
-            repository.removeAppointmentsListener(uid, appointmentsListener);
+        if (appointmentsListener != null) {
+            appointmentsListener.remove();
+            appointmentsListener = null;
         }
     }
 }

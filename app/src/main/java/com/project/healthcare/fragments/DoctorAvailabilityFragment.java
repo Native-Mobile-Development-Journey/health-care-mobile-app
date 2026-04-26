@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -29,7 +28,7 @@ public class DoctorAvailabilityFragment extends Fragment implements Availability
 
     private AvailabilitySlotAdapter adapter;
     private Spinner daySpinner;
-    private EditText startTimeInput;
+    private Spinner timeSpinner;
     private Button addSlotButton;
 
     public DoctorAvailabilityFragment() {
@@ -41,7 +40,7 @@ public class DoctorAvailabilityFragment extends Fragment implements Availability
         super.onViewCreated(view, savedInstanceState);
 
         daySpinner = view.findViewById(R.id.spinner_slot_day);
-        startTimeInput = view.findViewById(R.id.input_slot_start_time);
+        timeSpinner = view.findViewById(R.id.spinner_slot_time);
         addSlotButton = view.findViewById(R.id.button_add_slot);
 
         RecyclerView recyclerView = view.findViewById(R.id.recycler_availability_slots);
@@ -50,6 +49,7 @@ public class DoctorAvailabilityFragment extends Fragment implements Availability
         recyclerView.setAdapter(adapter);
 
         setupDaySpinner();
+        setupTimeSpinner();
         addSlotButton.setOnClickListener(v -> addAvailabilitySlot());
 
         loadAvailability();
@@ -60,6 +60,29 @@ public class DoctorAvailabilityFragment extends Fragment implements Availability
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, days);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         daySpinner.setAdapter(spinnerAdapter);
+    }
+
+    private void setupTimeSpinner() {
+        List<String> slots = createHourlySlotLabels();
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, slots);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        timeSpinner.setAdapter(spinnerAdapter);
+    }
+
+    private List<String> createHourlySlotLabels() {
+        List<String> slots = new ArrayList<>();
+        for (int hour = 0; hour < 24; hour++) {
+            String start = formatHour(hour);
+            String end = formatHour((hour + 1) % 24);
+            slots.add(start + " - " + end);
+        }
+        return slots;
+    }
+
+    private String formatHour(int hour24) {
+        int hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+        String period = hour24 < 12 ? "AM" : "PM";
+        return String.format(Locale.getDefault(), "%02d:00 %s", hour12, period);
     }
 
     private void loadAvailability() {
@@ -88,18 +111,16 @@ public class DoctorAvailabilityFragment extends Fragment implements Availability
 
     private void addAvailabilitySlot() {
         String dayLabel = daySpinner.getSelectedItem() != null ? daySpinner.getSelectedItem().toString() : "Monday";
-        String startTime = startTimeInput.getText() == null ? "" : startTimeInput.getText().toString().trim();
-        if (startTime.isEmpty()) {
-            startTimeInput.setError("Enter start time");
+        String selectedSlot = timeSpinner.getSelectedItem() != null ? timeSpinner.getSelectedItem().toString() : "12:00 AM - 01:00 AM";
+
+        String[] parts = selectedSlot.split(" - ");
+        if (parts.length != 2) {
+            Toast.makeText(requireContext(), "Select a valid time slot", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String endTime = calculateEndTime(startTime);
-        if (endTime == null) {
-            startTimeInput.setError("Enter time as HH:MM AM/PM");
-            return;
-        }
-
+        String startTime = parts[0].trim();
+        String endTime = parts[1].trim();
         String doctorId = FirebaseAuth.getInstance().getCurrentUser() != null
                 ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
         if (doctorId == null) {
@@ -121,45 +142,11 @@ public class DoctorAvailabilityFragment extends Fragment implements Availability
             if (success) {
                 Toast.makeText(requireContext(), "Availability added", Toast.LENGTH_SHORT).show();
                 loadAvailability();
-                startTimeInput.setText("");
+                timeSpinner.setSelection(0);
             } else {
                 Toast.makeText(requireContext(), message != null ? message : "Unable to save slot", Toast.LENGTH_LONG).show();
             }
         });
-    }
-
-    @Nullable
-    private String calculateEndTime(String startTime) {
-        try {
-            String[] parts = startTime.split(" ");
-            if (parts.length != 2) {
-                return null;
-            }
-            String[] timeParts = parts[0].split(":");
-            if (timeParts.length != 2) {
-                return null;
-            }
-            int hour = Integer.parseInt(timeParts[0]);
-            int minute = Integer.parseInt(timeParts[1]);
-            String suffix = parts[1].toUpperCase(Locale.ROOT);
-            if (suffix.equals("PM") && hour != 12) {
-                hour += 12;
-            } else if (suffix.equals("AM") && hour == 12) {
-                hour = 0;
-            }
-            hour += 1;
-            if (hour == 24) {
-                hour = 0;
-            }
-            int displayHour = hour % 12;
-            if (displayHour == 0) {
-                displayHour = 12;
-            }
-            String ampm = hour >= 12 ? "PM" : "AM";
-            return String.format(Locale.getDefault(), "%02d:%02d %s", displayHour, minute, ampm);
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     @Override
