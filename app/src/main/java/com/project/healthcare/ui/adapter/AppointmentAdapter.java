@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.project.healthcare.R;
@@ -60,6 +61,9 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         holder.time.setText(item.time);
         holder.date.setText(item.date);
 
+        String normalizedStatus = item.normalizedStatus();
+        holder.status.setText(getStatusLabel(normalizedStatus));
+        bindStatusStyle(holder.status, normalizedStatus);
 
 
         holder.root.setOnClickListener(v -> listener.onAppointmentOpen(item));
@@ -68,6 +72,42 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             return true;
         });
         holder.actionButton.setOnClickListener(v -> listener.onAppointmentAction(item));
+    }
+
+    private String getStatusLabel(String normalizedStatus) {
+        if (Appointment.STATUS_CANCELED.equals(normalizedStatus)) {
+            return "Canceled";
+        }
+        if (Appointment.STATUS_COMPLETED.equals(normalizedStatus)) {
+            return "Completed";
+        }
+        if (Appointment.STATUS_EXPIRED.equals(normalizedStatus)) {
+            return "Expired";
+        }
+        if (Appointment.STATUS_NO_SHOW.equals(normalizedStatus)) {
+            return "No Show";
+        }
+        return "Upcoming";
+    }
+
+    private void bindStatusStyle(TextView statusView, String normalizedStatus) {
+        if (Appointment.STATUS_CANCELED.equals(normalizedStatus)) {
+            statusView.setBackgroundResource(R.drawable.bg_status_cancel);
+            statusView.setTextColor(ContextCompat.getColor(statusView.getContext(), R.color.red_500));
+            return;
+        }
+        if (Appointment.STATUS_COMPLETED.equals(normalizedStatus)) {
+            statusView.setBackgroundResource(R.drawable.bg_status_complete);
+            statusView.setTextColor(ContextCompat.getColor(statusView.getContext(), R.color.green_500));
+            return;
+        }
+        if (Appointment.STATUS_EXPIRED.equals(normalizedStatus) || Appointment.STATUS_NO_SHOW.equals(normalizedStatus)) {
+            statusView.setBackgroundResource(R.drawable.bg_status_upcoming_yellow);
+            statusView.setTextColor(ContextCompat.getColor(statusView.getContext(), R.color.yellow_500));
+            return;
+        }
+        statusView.setBackgroundResource(R.drawable.bg_status_upcoming_blue);
+        statusView.setTextColor(ContextCompat.getColor(statusView.getContext(), R.color.blue_500));
     }
 
     @Override

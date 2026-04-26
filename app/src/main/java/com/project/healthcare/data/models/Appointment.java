@@ -2,6 +2,8 @@ package com.project.healthcare.data.models;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.util.Locale;
+
 @IgnoreExtraProperties
 public class Appointment {
 
@@ -122,7 +124,7 @@ public class Appointment {
         if (status == null) return STATUS_UPCOMING;
         
         // Map legacy status values to current constants
-        switch (status.trim().toLowerCase()) {
+        switch (status.trim().toLowerCase(Locale.ROOT)) {
             case "cancel":
             case "cancelled":
             case "canceled":
