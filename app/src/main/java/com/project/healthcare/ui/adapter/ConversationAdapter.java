@@ -20,11 +20,21 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
         void onConversationClick(Conversation conversation);
     }
 
+    public interface ConversationNameProvider {
+        String getName(Conversation conversation);
+    }
+
     private final List<Conversation> items = new ArrayList<>();
     private final OnConversationClickListener listener;
+    private final ConversationNameProvider nameProvider;
 
     public ConversationAdapter(OnConversationClickListener listener) {
+        this(listener, conversation -> conversation.doctorName);
+    }
+
+    public ConversationAdapter(OnConversationClickListener listener, ConversationNameProvider nameProvider) {
         this.listener = listener;
+        this.nameProvider = nameProvider;
     }
 
     public void submitList(List<Conversation> newItems) {
@@ -43,9 +53,10 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
     @Override
     public void onBindViewHolder(@NonNull ConversationViewHolder holder, int position) {
         Conversation item = items.get(position);
-        holder.name.setText(item.doctorName);
-        holder.message.setText(item.lastMessage);
-        holder.time.setText(item.timeLabel);
+        String name = nameProvider != null ? nameProvider.getName(item) : item.doctorName;
+        holder.name.setText(name != null ? name : "");
+        holder.message.setText(item.lastMessage != null ? item.lastMessage : "");
+        holder.time.setText(item.timeLabel != null ? item.timeLabel : "");
 
         if (item.unreadCount > 0) {
             holder.unread.setVisibility(View.VISIBLE);

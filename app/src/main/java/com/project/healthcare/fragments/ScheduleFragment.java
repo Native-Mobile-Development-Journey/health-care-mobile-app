@@ -119,6 +119,7 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
         appointmentsListener = repository.observePatientAppointmentsFromFirestore(uid, new AppRepository.ListCallback<Appointment>() {
             @Override
             public void onData(List<Appointment> items) {
+                if (!isAdded()) return;
                 allAppointments.clear();
                 allAppointments.addAll(items);
                 applyFilters();
@@ -134,6 +135,9 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
     }
 
     private void applyFilters() {
+        if (!isAdded() || searchInput == null || tabLayout == null) {
+            return;
+        }
         String query = searchInput.getText() == null ? "" : searchInput.getText().toString().trim().toLowerCase(Locale.ROOT);
         String selectedTab = getSelectedTabLabel();
 
@@ -156,6 +160,7 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
     }
 
     private String getSelectedTabLabel() {
+        if (!isAdded()) return "";
         TabLayout.Tab tab = tabLayout.getTabAt(tabLayout.getSelectedTabPosition());
         if (tab == null || tab.getText() == null) {
             return getString(R.string.status_all);
@@ -164,6 +169,7 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
     }
 
     private boolean matchesStatusFilter(String selectedTab, String status) {
+        if (!isAdded()) return false;
         if (selectedTab.equalsIgnoreCase(getString(R.string.status_all))) {
             return true;
         }
@@ -190,6 +196,7 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
 
     @Override
     public void onAppointmentAction(Appointment appointment) {
+        if (!isAdded()) return;
         String status = appointment.normalizedStatus();
         if (Appointment.STATUS_UPCOMING.equals(status)) {
             openDoctorDetail(appointment.doctorId, appointment.id);
@@ -212,6 +219,7 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
     }
 
     private void showStatusChangeDialog(Appointment appointment) {
+        if (!isAdded()) return;
         androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                 .setTitle(R.string.change_appointment_status_title)
                 .setItems(new CharSequence[]{getString(R.string.status_cancel)}, (d, which) -> {
@@ -222,19 +230,24 @@ public class ScheduleFragment extends Fragment implements AppointmentAdapter.OnA
                         }
                         if (success) {
                             requireActivity().runOnUiThread(() -> {
+                                if (!isAdded()) return;
                                 appointment.status = newStatus;
                                 applyFilters();
                                 Toast.makeText(requireContext(), getString(R.string.appointment_status_updated, newStatus), Toast.LENGTH_SHORT).show();
                             });
                             return;
                         }
-                        requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show());
+                        requireActivity().runOnUiThread(() -> {
+                            if (!isAdded()) return;
+                            Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+                        });
                     });
                 })
                 .setNegativeButton(R.string.cancel, (d, which) -> d.dismiss())
                 .create();
 
         dialog.setOnShowListener(d -> {
+            if (!isAdded()) return;
             dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE)
                     .setTextColor(requireContext().getColor(R.color.primary_500));
         });

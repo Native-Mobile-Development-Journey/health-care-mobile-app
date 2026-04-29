@@ -12,8 +12,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.project.healthcare.R;
 import com.project.healthcare.data.models.Message;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
@@ -40,8 +43,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     @Override
     public void onBindViewHolder(@NonNull MessageViewHolder holder, int position) {
         Message message = items.get(position);
-        holder.messageText.setText(message.text);
-        holder.timeText.setText(message.timestamp > 0 ? String.valueOf(message.timestamp) : "");
+        holder.messageText.setText(message.text != null ? message.text : "");
+
+        if (message.timestamp > 0) {
+            String formatted = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date(message.timestamp));
+            holder.timeText.setText(formatted);
+        } else {
+            holder.timeText.setText("");
+        }
 
         boolean isOutgoing = message.senderUid != null && message.senderUid.equals(currentUserId);
         holder.root.setBackgroundResource(isOutgoing ? R.drawable.bg_message_outgoing : R.drawable.bg_message_incoming);

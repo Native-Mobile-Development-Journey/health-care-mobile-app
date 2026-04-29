@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.project.healthcare.R;
 import com.project.healthcare.data.AppRepository;
 import com.project.healthcare.data.models.Conversation;
+import com.project.healthcare.fragments.ChatFragment;
 import com.project.healthcare.ui.adapter.ConversationAdapter;
 import com.google.firebase.database.ValueEventListener;
 
@@ -41,8 +42,17 @@ public class DoctorMessagesFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.recycler_doctor_conversations);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new ConversationAdapter(conversation -> {
-            Toast.makeText(requireContext(), "Open patient chat: " + conversation.patientName, Toast.LENGTH_SHORT).show();
-        });
+            if (conversation.id == null) {
+                return;
+            }
+            String participantName = conversation.patientName != null ? conversation.patientName : getString(R.string.value_unavailable);
+            ChatFragment chatFragment = ChatFragment.newInstance(conversation.id, participantName);
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.doctor_dashboard_container, chatFragment)
+                    .addToBackStack("doctor_chat")
+                    .commit();
+        }, conversation -> conversation.patientName);
         recyclerView.setAdapter(adapter);
 
         String doctorUid = repository.getCurrentUserUid();

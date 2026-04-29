@@ -44,13 +44,14 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
     @Override
     public void onBindViewHolder(@NonNull DoctorViewHolder holder, int position) {
         Doctor item = items.get(position);
-        holder.name.setText(item.name);
-        holder.specialty.setText(item.specialty);
+        String displayName = item.name != null && !item.name.trim().isEmpty() ? item.name : item.id;
+        holder.name.setText(displayName != null ? displayName : holder.itemView.getContext().getString(R.string.value_unavailable));
+        holder.specialty.setText(item.specialty != null ? item.specialty : holder.itemView.getContext().getString(R.string.specialty_default));
         holder.rating.setText(item.rating > 0
                 ? String.format(Locale.getDefault(), "%.1f ★", item.rating)
-                : holder.root.getContext().getString(R.string.value_unavailable));
+                : holder.itemView.getContext().getString(R.string.value_unavailable));
 
-        holder.root.setOnClickListener(v -> listener.onDoctorClick(item));
+        holder.itemView.setOnClickListener(v -> listener.onDoctorClick(item));
     }
 
     @Override
@@ -60,14 +61,12 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
 
     static class DoctorViewHolder extends RecyclerView.ViewHolder {
 
-        final View root;
         final TextView name;
         final TextView specialty;
         final TextView rating;
 
         DoctorViewHolder(@NonNull View itemView) {
             super(itemView);
-            root = itemView.findViewById(R.id.item_doctor_root);
             name = itemView.findViewById(R.id.text_doctor_name);
             specialty = itemView.findViewById(R.id.text_doctor_specialty);
             rating = itemView.findViewById(R.id.text_doctor_rating);

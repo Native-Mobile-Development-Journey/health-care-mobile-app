@@ -49,11 +49,15 @@ public class MessageFragment extends Fragment {
     private String uid;
     private Conversation activeConversation;
     private boolean isChatOpen;
+    private boolean isConversationReady;
 
     private TextInputEditText searchInput;
     private TextInputEditText chatInput;
+    private TextInputLayout searchLayout;
+    private TextView chatHeader;
     private TextView emptyText;
     private LinearLayout messageInputLayout;
+    private ImageButton sendButton;
     private RecyclerView recyclerView;
 
     public MessageFragment() {
@@ -65,9 +69,12 @@ public class MessageFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         searchInput = view.findViewById(R.id.input_message_search);
+        searchLayout = view.findViewById(R.id.layout_message_search);
+        chatHeader = view.findViewById(R.id.text_chat_header);
         chatInput = view.findViewById(R.id.input_chat_message);
         emptyText = view.findViewById(R.id.text_message_empty);
         messageInputLayout = view.findViewById(R.id.layout_message_input);
+        sendButton = view.findViewById(R.id.button_send_message);
         recyclerView = view.findViewById(R.id.recycler_messages);
 
         uid = repository.getCurrentUserUid();
@@ -95,7 +102,6 @@ public class MessageFragment extends Fragment {
             }
         });
 
-        ImageButton sendButton = view.findViewById(R.id.button_send_message);
         sendButton.setOnClickListener(v -> sendMessage());
 
         updateConversationView();
@@ -104,6 +110,30 @@ public class MessageFragment extends Fragment {
     }
 
     private void fetchDoctorProfiles() {
+        repository.fetchDoctorProfilesFromFirestoreUsers(new AppRepository.ListCallback<Doctor>() {
+            @Override
+            public void onData(List<Doctor> items) {
+                if (items == null || items.isEmpty()) {
+                    fetchDoctorProfilesFromDoctorsCollection();
+                    return;
+                }
+                allDoctors.clear();
+                allDoctors.addAll(items);
+                filteredDoctors.clear();
+                filteredDoctors.addAll(items);
+            }
+
+            @Override
+            public void onError(String message) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                }
+                fetchDoctorProfilesFromDoctorsCollection();
+            }
+        });
+    }
+
+    private void fetchDoctorProfilesFromDoctorsCollection() {
         repository.fetchAllDoctorProfiles(new AppRepository.ListCallback<Doctor>() {
             @Override
             public void onData(List<Doctor> items) {
@@ -170,8 +200,11 @@ public class MessageFragment extends Fragment {
 
         doctorList.setLayoutManager(new LinearLayoutManager(requireContext()));
         DoctorAdapter doctorAdapter = new DoctorAdapter(doctor -> {
-            dialog.dismiss();
-            openDoctorChat(doctor);
+            if (doctor == null || doctor.id == null || doctor.id.trim().isEmpty()) {
+                Toast.makeText(requireContext(), R.string.auth_error_generic, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            openDoctorChat(doctor, dialog);
         });
         doctorList.setAdapter(doctorAdapter);
         doctorAdapter.submitList(filteredDoctors);
@@ -206,43 +239,95 @@ public class MessageFragment extends Fragment {
     }
 
     private void openDoctorChat(Doctor doctor) {
+        openDoctorChat(doctor, null);
+    }
+
+    private void openDoctorChat(Doctor doctor, @Nullable BottomSheetDialog dialog) {
         if (uid == null) {
             Toast.makeText(requireContext(), R.string.auth_error_generic, Toast.LENGTH_SHORT).show();
+            if (dialog != null) {
+                dialog.dismiss();
+            }
             return;
         }
-        repository.findOrCreateConversation(uid, repository.getCurrentUserDisplayName(), doctor.id, doctor.name, "", new AppRepository.ConversationCallback() {
+        if (doctor == null || doctor.id == null || doctor.id.trim().isEmpty()) {
+            Toast.makeText(requireContext(), R.string.auth_error_generic, Toast.LENGTH_SHORT).show();
+            if (dialog != null) {
+                dialog.dismiss();
+            }
+            return;
+        }
+        String doctorName = doctor.name != null && !doctor.name.trim().isEmpty() ? doctor.name.trim() : getString(R.string.value_unavailable);
+        String temporaryConversationId = "pending_" + System.currentTimeMillis();
+        activeConversation = new Conversation(
+                temporaryConversationId,
+                uid,
+                repository.getCurrentUserDisplayName(),
+                doctor.id,
+                doctorName,
+                "",
+                getString(R.string.messages_opening_thread, doctorName),
+                0,
+                null
+        );
+        isChatOpen = true;
+        isConversationReady = false;
+        updateConversationView();
+        observeConversationMessages(activeConversation.id);
+
+        repository.findOrCreateConversation(uid, repository.getCurrentUserDisplayName(), doctor.id, doctorName, "", new AppRepository.ConversationCallback() {
             @Override
             public void onConversationLoaded(@Nullable Conversation conversation) {
-                if (conversation == null) {
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+                if (!isAdded()) {
                     return;
                 }
+                if (conversation == null) {
+                    Toast.makeText(requireContext(), R.string.auth_error_generic, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (messagesListener != null && activeConversation != null) {
+                    repository.removeConversationMessagesListener(activeConversation.id, messagesListener);
+                    messagesListener = null;
+                }
                 activeConversation = conversation;
-                isChatOpen = true;
+                isConversationReady = true;
                 updateConversationView();
                 observeConversationMessages(conversation.id);
+                Toast.makeText(requireContext(), getString(R.string.messages_opening_thread, doctorName), Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onError(String message) {
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
                 if (isAdded()) {
                     Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
                 }
+                isChatOpen = false;
+                isConversationReady = false;
+                activeConversation = null;
+                updateConversationView();
             }
         });
     }
 
     private void openConversation(Conversation conversation) {
+        if (messagesListener != null && activeConversation != null) {
+            repository.removeConversationMessagesListener(activeConversation.id, messagesListener);
+            messagesListener = null;
+        }
         activeConversation = conversation;
         isChatOpen = true;
+        isConversationReady = true;
         updateConversationView();
         observeConversationMessages(conversation.id);
     }
 
     private void observeConversationMessages(String conversationId) {
-        if (messagesListener != null && activeConversation != null) {
-            repository.removeConversationMessagesListener(activeConversation.id, messagesListener);
-            messagesListener = null;
-        }
         if (conversationId == null) {
             activeMessages.clear();
             messageAdapter.submitList(activeMessages);
@@ -303,10 +388,20 @@ public class MessageFragment extends Fragment {
         if (isChatOpen) {
             recyclerView.setAdapter(messageAdapter);
             messageInputLayout.setVisibility(View.VISIBLE);
+            sendButton.setEnabled(isConversationReady);
+            chatInput.setEnabled(isConversationReady);
+            if (activeConversation != null) {
+                String threadTitle = getString(R.string.messages_opening_thread, activeConversation.doctorName != null ? activeConversation.doctorName : getString(R.string.nav_message));
+                chatHeader.setText(threadTitle);
+            }
+            chatHeader.setVisibility(View.VISIBLE);
+            searchLayout.setVisibility(View.GONE);
             emptyText.setVisibility(activeMessages.isEmpty() ? View.VISIBLE : View.GONE);
         } else {
             recyclerView.setAdapter(conversationAdapter);
             messageInputLayout.setVisibility(View.GONE);
+            chatHeader.setVisibility(View.GONE);
+            searchLayout.setVisibility(View.VISIBLE);
             applyFilters();
         }
     }
