@@ -1197,6 +1197,67 @@ public class AppRepository {
         });
     }
 
+    public void updateMessageText(String conversationId, Message message, String newText, @Nullable CompletionCallback callback) {
+        if (conversationId == null || message == null || message.id == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid message reference");
+            }
+            return;
+        }
+        if (newText == null || newText.trim().isEmpty()) {
+            if (callback != null) {
+                callback.onComplete(false, "Message cannot be empty");
+            }
+            return;
+        }
+
+        Map<String, Object> update = new HashMap<>();
+        update.put("text", newText.trim());
+        update.put("edited", true);
+        update.put("editedAt", System.currentTimeMillis());
+
+        DatabaseReference messageRef = conversationsRef.child(conversationId).child(NODE_CONVERSATION_MESSAGES).child(message.id);
+        messageRef.updateChildren(update)
+                .addOnSuccessListener(unused -> {
+                    updateConversationLastMessageIfLatest(conversationId, message.id, newText.trim());
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
+    }
+
+    public void deleteMessageForUser(String conversationId, String messageId, String viewerUid, @Nullable CompletionCallback callback) {
+        if (conversationId == null || messageId == null || viewerUid == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid message reference");
+            }
+            return;
+        }
+
+        DatabaseReference messageRef = conversationsRef.child(conversationId)
+                .child(NODE_CONVERSATION_MESSAGES)
+                .child(messageId)
+                .child("deletedFor")
+                .child(viewerUid);
+
+        messageRef.setValue(true)
+                .addOnSuccessListener(unused -> {
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
+    }
+
     public void markConversationRead(String conversationId, String viewerUid, @Nullable CompletionCallback callback) {
         if (conversationId == null || viewerUid == null) {
             if (callback != null) {
@@ -1295,6 +1356,31 @@ public class AppRepository {
                 }
 
                 conversationsRef.child(conversationId).updateChildren(update);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+    }
+
+    private void updateConversationLastMessageIfLatest(String conversationId, String messageId, String newText) {
+        if (conversationId == null || messageId == null) {
+            return;
+        }
+
+        DatabaseReference messagesRef = conversationsRef.child(conversationId).child(NODE_CONVERSATION_MESSAGES);
+        messagesRef.orderByChild("timestamp").limitToLast(1).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    if (messageId.equals(child.getKey())) {
+                        Map<String, Object> update = new HashMap<>();
+                        update.put("lastMessage", newText);
+                        conversationsRef.child(conversationId).updateChildren(update);
+                        return;
+                    }
+                }
             }
 
             @Override

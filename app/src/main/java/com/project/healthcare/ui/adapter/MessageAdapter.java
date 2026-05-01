@@ -6,10 +6,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.PopupMenu;
 
 import com.project.healthcare.R;
 import com.project.healthcare.data.models.Message;
@@ -22,11 +24,19 @@ import java.util.Locale;
 
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
+    public interface MessageActionListener {
+        void onEdit(Message message);
+
+        void onDelete(Message message);
+    }
+
     private final List<Message> items = new ArrayList<>();
     private final String currentUserId;
+    private final MessageActionListener actionListener;
 
-    public MessageAdapter(String currentUserId) {
+    public MessageAdapter(String currentUserId, MessageActionListener actionListener) {
         this.currentUserId = currentUserId;
+        this.actionListener = actionListener;
     }
 
     public void submitList(List<Message> newItems) {
@@ -63,6 +73,37 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         int textColor = ContextCompat.getColor(holder.itemView.getContext(), isOutgoing ? R.color.base_white : R.color.base_black);
         holder.messageText.setTextColor(textColor);
         holder.timeText.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), isOutgoing ? R.color.base_white : R.color.neutral_400));
+
+        holder.root.setOnLongClickListener(v -> {
+            showMessageMenu(v, message, isOutgoing);
+            return true;
+        });
+    }
+
+    private void showMessageMenu(View anchor, Message message, boolean isOutgoing) {
+        PopupMenu menu = new PopupMenu(anchor.getContext(), anchor);
+        menu.getMenuInflater().inflate(R.menu.menu_message_actions, menu.getMenu());
+        menu.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.action_edit_message) {
+                if (!isOutgoing) {
+                    Toast.makeText(anchor.getContext(), R.string.message_edit_not_allowed, Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+                if (actionListener != null) {
+                    actionListener.onEdit(message);
+                }
+                return true;
+            }
+            if (itemId == R.id.action_delete_message) {
+                if (actionListener != null) {
+                    actionListener.onDelete(message);
+                }
+                return true;
+            }
+            return false;
+        });
+        menu.show();
     }
 
     @Override

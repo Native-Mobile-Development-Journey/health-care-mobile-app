@@ -86,6 +86,10 @@
     <string name="type_message">Type a message</string>
     <string name="send_message">Send message</string>
     <string name="enter_message">Enter a message</string>
+    <string name="edit">Edit</string>
+    <string name="edit_message_title">Edit message</string>
+    <string name="message_edit_not_allowed">You can only edit your own messages.</string>
+    <string name="save">Save</string>
     <string name="select_doctor_title">Select doctor</string>
     <string name="select_doctor_empty">No doctors available.</string>
     <string name="settings_preferences">Preferences</string>

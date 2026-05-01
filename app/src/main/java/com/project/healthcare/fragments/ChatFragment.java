@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.project.healthcare.R;
 import com.project.healthcare.data.AppRepository;
 import com.project.healthcare.data.models.Message;
@@ -75,7 +76,17 @@ public class ChatFragment extends Fragment {
 
         titleText.setText(TextUtils.isEmpty(conversationName) ? getString(R.string.nav_message) : conversationName);
 
-        messageAdapter = new MessageAdapter(uid != null ? uid : "");
+        messageAdapter = new MessageAdapter(uid != null ? uid : "", new MessageAdapter.MessageActionListener() {
+            @Override
+            public void onEdit(Message message) {
+                showEditMessageDialog(message);
+            }
+
+            @Override
+            public void onDelete(Message message) {
+                deleteMessage(message);
+            }
+        });
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(messageAdapter);
 
@@ -99,7 +110,14 @@ public class ChatFragment extends Fragment {
             @Override
             public void onData(List<Message> items) {
                 activeMessages.clear();
-                activeMessages.addAll(items);
+                if (items != null) {
+                    for (Message message : items) {
+                        if (uid != null && message.deletedFor != null && Boolean.TRUE.equals(message.deletedFor.get(uid))) {
+                            continue;
+                        }
+                        activeMessages.add(message);
+                    }
+                }
                 messageAdapter.submitList(activeMessages);
                 emptyText.setVisibility(activeMessages.isEmpty() ? View.VISIBLE : View.GONE);
                 if (uid != null) {
@@ -146,6 +164,63 @@ public class ChatFragment extends Fragment {
                 return;
             }
             Toast.makeText(requireContext(), error != null ? error : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void showEditMessageDialog(Message message) {
+        if (message == null || message.id == null || uid == null) {
+            return;
+        }
+        if (message.senderUid == null || !message.senderUid.equals(uid)) {
+            Toast.makeText(requireContext(), R.string.message_edit_not_allowed, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        TextInputEditText input = new TextInputEditText(requireContext());
+        input.setText(message.text != null ? message.text : "");
+        input.setSelection(input.getText() != null ? input.getText().length() : 0);
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.edit_message_title)
+                .setView(input)
+                .setPositiveButton(R.string.save, null)
+                .setNegativeButton(R.string.cancel, null);
+
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(d -> {
+            android.widget.Button button = dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE);
+            button.setOnClickListener(v -> {
+                String updatedText = input.getText() == null ? "" : input.getText().toString().trim();
+                if (updatedText.isEmpty()) {
+                    input.setError(getString(R.string.enter_message));
+                    return;
+                }
+                repository.updateMessageText(conversationId, message, updatedText, (success, error) -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    if (!success) {
+                        Toast.makeText(requireContext(), error != null ? error : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    dialog.dismiss();
+                });
+            });
+        });
+        dialog.show();
+    }
+
+    private void deleteMessage(Message message) {
+        if (message == null || message.id == null || conversationId == null || uid == null) {
+            return;
+        }
+        repository.deleteMessageForUser(conversationId, message.id, uid, (success, error) -> {
+            if (!isAdded()) {
+                return;
+            }
+            if (!success) {
+                Toast.makeText(requireContext(), error != null ? error : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
