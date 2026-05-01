@@ -12,6 +12,7 @@
     <dimen name="space_20">20dp</dimen>
     <dimen name="space_24">24dp</dimen>
     <dimen name="space_32">32dp</dimen>
+    <dimen name="space_88">88dp</dimen>
 
     <dimen name="radius_2">2dp</dimen>
     <dimen name="radius_6">6dp</dimen>

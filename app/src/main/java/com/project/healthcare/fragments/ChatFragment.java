@@ -73,7 +73,7 @@ public class ChatFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.recycler_chat_messages);
         ImageButton sendButton = view.findViewById(R.id.button_chat_send);
 
-        titleText.setText(getString(R.string.messages_opening_thread, TextUtils.isEmpty(conversationName) ? getString(R.string.nav_message) : conversationName));
+        titleText.setText(TextUtils.isEmpty(conversationName) ? getString(R.string.nav_message) : conversationName);
 
         messageAdapter = new MessageAdapter(uid != null ? uid : "");
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));

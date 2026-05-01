@@ -78,12 +78,16 @@
     <string name="delete_appointment_success">Appointment deleted successfully.</string>
     <string name="messages_subtitle">Stay connected with your doctors</string>
     <string name="messages_search_hint">Search by doctor name</string>
+    <string name="messages_list_hint">Your recent conversations</string>
     <string name="messages_empty">No conversations available.</string>
     <string name="conversation_message_default">No recent messages</string>
     <string name="messages_opening_thread">Opening chat with %1$s</string>
+    <string name="messages_new_chat">New chat</string>
     <string name="type_message">Type a message</string>
     <string name="send_message">Send message</string>
     <string name="enter_message">Enter a message</string>
+    <string name="select_doctor_title">Select doctor</string>
+    <string name="select_doctor_empty">No doctors available.</string>
     <string name="settings_preferences">Preferences</string>
     <string name="settings_patient">Patient</string>
     <string name="settings_guest_email">guest@healthcare.app</string>
@@ -146,5 +150,6 @@
     <string name="content_notification">Notifications</string>
     <string name="content_back">Back</string>
     <string name="content_doctor_avatar">Doctor avatar</string>
+    <string name="content_chat_avatar">Chat avatar</string>
     <string name="content_service_item">Service icon</string>
 </resources>
