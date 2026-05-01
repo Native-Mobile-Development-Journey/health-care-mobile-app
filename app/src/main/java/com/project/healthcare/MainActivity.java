@@ -15,6 +15,7 @@ import androidx.fragment.app.FragmentManager;
 
 import com.project.healthcare.auth.AuthActivity;
 import com.project.healthcare.data.AppRepository;
+import com.project.healthcare.fragments.ChatFragment;
 import com.project.healthcare.fragments.DoctorDetailFragment;
 import com.project.healthcare.fragments.HomeFragment;
 import com.project.healthcare.fragments.MessageFragment;
@@ -124,6 +125,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void syncBottomNavigationVisibility() {
         boolean hasBackStack = getSupportFragmentManager().getBackStackEntryCount() > 0;
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (currentFragment instanceof ChatFragment) {
+            bottomNavigationView.setVisibility(View.VISIBLE);
+            return;
+        }
         bottomNavigationView.setVisibility(hasBackStack ? View.GONE : View.VISIBLE);
     }
 
