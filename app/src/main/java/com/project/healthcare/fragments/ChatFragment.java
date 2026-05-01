@@ -102,6 +102,10 @@ public class ChatFragment extends Fragment {
                 activeMessages.addAll(items);
                 messageAdapter.submitList(activeMessages);
                 emptyText.setVisibility(activeMessages.isEmpty() ? View.VISIBLE : View.GONE);
+                if (uid != null) {
+                    repository.markMessagesRead(conversationId, uid, activeMessages);
+                    repository.markConversationRead(conversationId, uid, null);
+                }
             }
 
             @Override

@@ -13,6 +13,8 @@ public class Conversation {
     public String lastMessage;
     public String timeLabel;
     public int unreadCount;
+    public int unreadCountPatient;
+    public int unreadCountDoctor;
 
     public Conversation() {
         // Needed for Firebase deserialization.
@@ -26,7 +28,8 @@ public class Conversation {
             String doctorName,
             String lastMessage,
             String timeLabel,
-            int unreadCount
+            int unreadCountPatient,
+            int unreadCountDoctor
     ) {
         this.id = id;
         this.patientUid = patientUid;
@@ -35,6 +38,8 @@ public class Conversation {
         this.doctorName = doctorName;
         this.lastMessage = lastMessage;
         this.timeLabel = timeLabel;
-        this.unreadCount = unreadCount;
+        this.unreadCountPatient = unreadCountPatient;
+        this.unreadCountDoctor = unreadCountDoctor;
+        this.unreadCount = 0;
     }
 }
