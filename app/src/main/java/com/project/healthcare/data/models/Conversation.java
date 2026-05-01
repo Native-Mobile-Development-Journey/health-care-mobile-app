@@ -1,7 +1,6 @@
 package com.project.healthcare.data.models;
 
 import com.google.firebase.database.IgnoreExtraProperties;
-import java.util.List;
 
 @IgnoreExtraProperties
 public class Conversation {
@@ -14,7 +13,6 @@ public class Conversation {
     public String lastMessage;
     public String timeLabel;
     public int unreadCount;
-    public List<Message> messages;
 
     public Conversation() {
         // Needed for Firebase deserialization.
@@ -28,8 +26,7 @@ public class Conversation {
             String doctorName,
             String lastMessage,
             String timeLabel,
-            int unreadCount,
-            List<Message> messages
+            int unreadCount
     ) {
         this.id = id;
         this.patientUid = patientUid;
@@ -39,6 +36,5 @@ public class Conversation {
         this.lastMessage = lastMessage;
         this.timeLabel = timeLabel;
         this.unreadCount = unreadCount;
-        this.messages = messages;
     }
 }

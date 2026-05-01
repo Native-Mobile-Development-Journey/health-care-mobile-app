@@ -1105,8 +1105,7 @@ public class AppRepository {
                         doctorName,
                         initialMessage != null ? initialMessage : "",
                         "",
-                        0,
-                        null
+                    0
                 );
                 conversationsRef.child(conversationId).setValue(conversation)
                         .addOnSuccessListener(unused -> callback.onConversationLoaded(conversation))
