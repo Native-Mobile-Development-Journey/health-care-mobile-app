@@ -1,28 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/item_message_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@drawable/bg_message_incoming">
+    android:layout_marginBottom="8dp">
 
-    <TextView
-        android:id="@+id/text_message_body"
+    <LinearLayout
+        android:id="@+id/item_message_bubble"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Message body"
-        android:textColor="@color/base_black"
-        android:textSize="14sp" />
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="@drawable/bg_message_incoming">
 
-    <TextView
-        android:id="@+id/text_message_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="12:00 PM"
-        android:textColor="@color/neutral_400"
-        android:textSize="12sp" />
+        <TextView
+            android:id="@+id/text_message_body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="260dp"
+            android:text="Message body"
+            android:textColor="@color/base_black"
+            android:textSize="14sp" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/text_message_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="12:00 PM"
+            android:textColor="@color/neutral_400"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

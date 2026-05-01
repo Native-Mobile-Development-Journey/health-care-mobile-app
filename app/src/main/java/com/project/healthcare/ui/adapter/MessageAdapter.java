@@ -1,8 +1,10 @@
 package com.project.healthcare.ui.adapter;
 
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -53,9 +55,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         }
 
         boolean isOutgoing = message.senderUid != null && message.senderUid.equals(currentUserId);
-        holder.root.setBackgroundResource(isOutgoing ? R.drawable.bg_message_outgoing : R.drawable.bg_message_incoming);
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) holder.bubble.getLayoutParams();
+        layoutParams.gravity = isOutgoing ? Gravity.END : Gravity.START;
+        holder.bubble.setLayoutParams(layoutParams);
+
+        holder.bubble.setBackgroundResource(isOutgoing ? R.drawable.bg_message_outgoing : R.drawable.bg_message_incoming);
         int textColor = ContextCompat.getColor(holder.itemView.getContext(), isOutgoing ? R.color.base_white : R.color.base_black);
         holder.messageText.setTextColor(textColor);
+        holder.timeText.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), isOutgoing ? R.color.base_white : R.color.neutral_400));
     }
 
     @Override
@@ -66,12 +73,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     static class MessageViewHolder extends RecyclerView.ViewHolder {
 
         final View root;
+        final View bubble;
         final TextView messageText;
         final TextView timeText;
 
         MessageViewHolder(@NonNull View itemView) {
             super(itemView);
             root = itemView.findViewById(R.id.item_message_root);
+            bubble = itemView.findViewById(R.id.item_message_bubble);
             messageText = itemView.findViewById(R.id.text_message_body);
             timeText = itemView.findViewById(R.id.text_message_time);
         }
