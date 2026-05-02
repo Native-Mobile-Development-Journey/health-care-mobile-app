@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.database.ValueEventListener;
 import com.project.healthcare.R;
@@ -49,7 +50,9 @@ public class MessageFragment extends Fragment {
         uid = repository.getCurrentUserUid();
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        conversationAdapter = new ConversationAdapter(this::openConversation);
+        conversationAdapter = new ConversationAdapter(this::openConversation,
+            conversation -> conversation.doctorName,
+            this::confirmDeleteConversation);
         recyclerView.setAdapter(conversationAdapter);
 
         newChatButton.setOnClickListener(v -> openDoctorSelection());
@@ -103,6 +106,29 @@ public class MessageFragment extends Fragment {
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack("select_doctor")
                 .commit();
+    }
+
+    private void confirmDeleteConversation(Conversation conversation) {
+        if (conversation == null || conversation.id == null || uid == null) {
+            return;
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.delete_chat_title)
+                .setMessage(R.string.delete_chat_message)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, (dialog, which) ->
+                        repository.archiveConversationForUser(conversation.id, uid, (success, error) -> {
+                            if (!isAdded()) {
+                                return;
+                            }
+                            if (!success) {
+                                Toast.makeText(requireContext(),
+                                        error != null ? error : getString(R.string.auth_error_generic),
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }))
+                .show();
     }
 
     @Override

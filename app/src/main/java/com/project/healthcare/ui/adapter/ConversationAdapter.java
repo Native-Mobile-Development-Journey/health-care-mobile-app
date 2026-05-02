@@ -1,5 +1,6 @@
 package com.project.healthcare.ui.adapter;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +8,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.PopupMenu;
 
 import com.project.healthcare.R;
 import com.project.healthcare.data.models.Conversation;
@@ -24,17 +26,29 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
         String getName(Conversation conversation);
     }
 
+    public interface ConversationActionListener {
+        void onDelete(Conversation conversation);
+    }
+
     private final List<Conversation> items = new ArrayList<>();
     private final OnConversationClickListener listener;
     private final ConversationNameProvider nameProvider;
+    private final ConversationActionListener actionListener;
 
     public ConversationAdapter(OnConversationClickListener listener) {
-        this(listener, conversation -> conversation.doctorName);
+        this(listener, conversation -> conversation.doctorName, null);
     }
 
     public ConversationAdapter(OnConversationClickListener listener, ConversationNameProvider nameProvider) {
+        this(listener, nameProvider, null);
+    }
+
+    public ConversationAdapter(OnConversationClickListener listener,
+                               ConversationNameProvider nameProvider,
+                               ConversationActionListener actionListener) {
         this.listener = listener;
         this.nameProvider = nameProvider;
+        this.actionListener = actionListener;
     }
 
     public void submitList(List<Conversation> newItems) {
@@ -55,7 +69,11 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
         Conversation item = items.get(position);
         String name = nameProvider != null ? nameProvider.getName(item) : item.doctorName;
         holder.name.setText(name != null ? name : "");
-        holder.message.setText(item.lastMessage != null ? item.lastMessage : "");
+        if (TextUtils.isEmpty(item.lastMessage)) {
+            holder.message.setText(R.string.conversation_message_default);
+        } else {
+            holder.message.setText(item.lastMessage);
+        }
         holder.time.setText(item.timeLabel != null ? item.timeLabel : "");
 
         if (item.unreadCount > 0) {
@@ -66,6 +84,29 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
         }
 
         holder.root.setOnClickListener(v -> listener.onConversationClick(item));
+        if (actionListener != null) {
+            holder.root.setOnLongClickListener(v -> {
+                showConversationMenu(v, item);
+                return true;
+            });
+        } else {
+            holder.root.setOnLongClickListener(null);
+        }
+    }
+
+    private void showConversationMenu(View anchor, Conversation conversation) {
+        PopupMenu menu = new PopupMenu(anchor.getContext(), anchor);
+        menu.getMenuInflater().inflate(R.menu.menu_conversation_actions, menu.getMenu());
+        menu.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_delete_conversation) {
+                if (actionListener != null) {
+                    actionListener.onDelete(conversation);
+                }
+                return true;
+            }
+            return false;
+        });
+        menu.show();
     }
 
     @Override
