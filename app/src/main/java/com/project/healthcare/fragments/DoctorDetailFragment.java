@@ -376,6 +376,40 @@ public class DoctorDetailFragment extends Fragment {
                 }
 
                 if (selectedDoctor != null) {
+                    if (isDoctorProfileIncomplete(selectedDoctor)) {
+                        String targetDoctorId = selectedDoctor.id != null && !selectedDoctor.id.trim().isEmpty()
+                                ? selectedDoctor.id
+                                : doctorId;
+                        if (targetDoctorId == null) {
+                            Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        Toast.makeText(requireContext(), R.string.schedule_confirming, Toast.LENGTH_SHORT).show();
+                        loadDoctorProfileForBooking(targetDoctorId, new AppRepository.DoctorCallback() {
+                            @Override
+                            public void onDoctorLoaded(@Nullable Doctor doctor) {
+                                if (!isAdded()) {
+                                    return;
+                                }
+                                if (doctor == null) {
+                                    Toast.makeText(requireContext(), R.string.doctor_not_ready, Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                selectedDoctor = doctor;
+                                bindDoctor(doctor);
+                                repository.createAppointment(doctor, selectedDate, selectedTime, DoctorDetailFragment.this::handleCompletion);
+                            }
+
+                            @Override
+                            public void onError(String message) {
+                                if (!isAdded()) {
+                                    return;
+                                }
+                                Toast.makeText(requireContext(), message != null ? message : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        return;
+                    }
                     repository.createAppointment(selectedDoctor, selectedDate, selectedTime, this::handleCompletion);
                     return;
                 }
@@ -450,6 +484,17 @@ public class DoctorDetailFragment extends Fragment {
     private boolean isCurrentUserDoctor() {
         String uid = repository.getCurrentUserUid();
         return uid != null && uid.equals(doctorId);
+    }
+
+    private boolean isDoctorProfileIncomplete(@Nullable Doctor doctor) {
+        if (doctor == null) {
+            return true;
+        }
+        return isBlank(doctor.name) || isBlank(doctor.specialty) || isBlank(doctor.hospital);
+    }
+
+    private boolean isBlank(@Nullable String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private interface ConflictCallback {

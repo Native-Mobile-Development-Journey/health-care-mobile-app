@@ -247,8 +247,29 @@ public class AppRepository {
                         return;
                     }
                     Doctor doctor = snapshot.toObject(Doctor.class);
-                    if (doctor != null && (doctor.id == null || doctor.id.isEmpty())) {
+                    if (doctor == null) {
+                        callback.onDoctorLoaded(null);
+                        return;
+                    }
+                    if (doctor.id == null || doctor.id.isEmpty()) {
                         doctor.id = doctorId;
+                    }
+                    if (isBlank(doctor.name) || isBlank(doctor.specialty) || isBlank(doctor.hospital)) {
+                        fetchDoctorProfileFromFirestoreUsers(doctorId, new DoctorCallback() {
+                            @Override
+                            public void onDoctorLoaded(@Nullable Doctor fallbackDoctor) {
+                                if (fallbackDoctor != null) {
+                                    mergeDoctorProfile(doctor, fallbackDoctor);
+                                }
+                                callback.onDoctorLoaded(doctor);
+                            }
+
+                            @Override
+                            public void onError(String message) {
+                                callback.onDoctorLoaded(doctor);
+                            }
+                        });
+                        return;
                     }
                     callback.onDoctorLoaded(doctor);
                 })
@@ -1823,6 +1844,22 @@ public class AppRepository {
             return "";
         }
         return value.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isBlank(@Nullable String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private void mergeDoctorProfile(@NonNull Doctor target, @NonNull Doctor fallback) {
+        if (isBlank(target.name)) {
+            target.name = fallback.name;
+        }
+        if (isBlank(target.specialty)) {
+            target.specialty = fallback.specialty;
+        }
+        if (isBlank(target.hospital)) {
+            target.hospital = fallback.hospital;
+        }
     }
 
     private String formatTimeLabel(long timestamp) {
