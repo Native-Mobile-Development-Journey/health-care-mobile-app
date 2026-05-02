@@ -20,7 +20,9 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.SetOptions;
@@ -852,8 +854,8 @@ public class AppRepository {
     }
 
     /**
-     * Update appointment status (complete/cancel) using backend Cloud Function.
-     * Automatically releases slot lock when cancelling upcoming appointments.
+        * Update appointment status (complete/cancel) using local data updates.
+        * Cancelling will update Firestore/RTDB and release slot locks when possible.
      */
     public void updateAppointmentStatus(String appointmentId, String newStatus, @Nullable CompletionCallback callback) {
 
@@ -863,21 +865,7 @@ public class AppRepository {
         }
 
         if (Appointment.STATUS_CANCELED.equals(newStatus)) {
-            // Cancel appointment via cloud function (releases slot lock)
-            Map<String, Object> data = new HashMap<>();
-            data.put("appointmentId", appointmentId);
-
-            functions.getHttpsCallable("cancelAppointment")
-                    .call(data)
-                    .addOnSuccessListener(result -> {
-                        if (callback != null) callback.onComplete(true, "Appointment cancelled successfully");
-                    })
-                    .addOnFailureListener(e -> {
-                        if (callback != null) {
-                            String message = e.getMessage();
-                            callback.onComplete(false, message != null ? message : "Failed to cancel appointment");
-                        }
-                    });
+            cancelAppointmentDirect(appointmentId, callback);
         } else if (Appointment.STATUS_COMPLETED.equals(newStatus)
                 || Appointment.STATUS_NO_SHOW.equals(newStatus)
                 || Appointment.STATUS_EXPIRED.equals(newStatus)) {
@@ -908,6 +896,65 @@ public class AppRepository {
         } else {
             if (callback != null) callback.onComplete(false, "Invalid status transition");
         }
+    }
+
+    private void cancelAppointmentDirect(String appointmentId, @Nullable CompletionCallback callback) {
+        String currentUid = getCurrentUserUid();
+        if (currentUid == null) {
+            if (callback != null) callback.onComplete(false, "User not authenticated");
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        DocumentReference appointmentRef = firestore.collection(APPOINTMENTS_COLLECTION).document(appointmentId);
+
+        firestore.runTransaction(transaction -> {
+            DocumentSnapshot snapshot = transaction.get(appointmentRef);
+            if (!snapshot.exists()) {
+                throw new FirebaseFirestoreException("Appointment not found", FirebaseFirestoreException.Code.NOT_FOUND);
+            }
+
+            String status = snapshot.getString("status");
+            if (status != null && !Appointment.STATUS_UPCOMING.equalsIgnoreCase(status)) {
+                throw new FirebaseFirestoreException("Only upcoming appointments can be cancelled", FirebaseFirestoreException.Code.FAILED_PRECONDITION);
+            }
+
+            Map<String, Object> update = new HashMap<>();
+            update.put("status", Appointment.STATUS_CANCELED);
+            update.put("updatedAt", now);
+            update.put("statusChangedAt", now);
+            update.put("statusChangedBy", currentUid);
+            transaction.update(appointmentRef, update);
+
+            String doctorId = snapshot.getString("doctorId");
+            String slotDocId = snapshot.getString("slotDocId");
+            if (doctorId != null && slotDocId != null) {
+                DocumentReference slotRef = firestore.collection(DOCS_COLLECTION)
+                        .document(doctorId)
+                        .collection(AVAILABILITY_COLLECTION)
+                        .document(slotDocId);
+                Map<String, Object> slotUpdate = new HashMap<>();
+                slotUpdate.put("bookedCount", FieldValue.increment(-1));
+                slotUpdate.put("updatedAt", now);
+                transaction.update(slotRef, slotUpdate);
+            }
+
+            return null;
+        }).addOnSuccessListener(unused -> {
+            Map<String, Object> rtdbUpdate = new HashMap<>();
+            rtdbUpdate.put("status", Appointment.STATUS_CANCELED);
+            rtdbUpdate.put("updatedAt", now);
+            rtdbUpdate.put("statusChangedAt", now);
+            rtdbUpdate.put("statusChangedBy", currentUid);
+            appointmentsRef.child(appointmentId).updateChildren(rtdbUpdate);
+
+            if (callback != null) callback.onComplete(true, "Appointment cancelled successfully");
+        }).addOnFailureListener(e -> {
+            if (callback != null) {
+                String message = e.getMessage();
+                callback.onComplete(false, message != null ? message : "Failed to cancel appointment");
+            }
+        });
     }
 
     public void fetchUserRole(String uid, RoleCallback callback) {
