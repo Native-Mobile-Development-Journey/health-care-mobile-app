@@ -83,8 +83,13 @@ public class ChatFragment extends Fragment {
             }
 
             @Override
-            public void onDelete(Message message) {
-                deleteMessage(message);
+            public void onDeleteForMe(Message message) {
+                deleteMessageForMe(message);
+            }
+
+            @Override
+            public void onDeleteForEveryone(Message message) {
+                confirmDeleteMessageForEveryone(message);
             }
         });
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -172,7 +177,7 @@ public class ChatFragment extends Fragment {
             return;
         }
         if (message.senderUid == null || !message.senderUid.equals(uid)) {
-            Toast.makeText(requireContext(), R.string.message_edit_not_allowed, Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.message_delete_not_allowed, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -210,7 +215,7 @@ public class ChatFragment extends Fragment {
         dialog.show();
     }
 
-    private void deleteMessage(Message message) {
+    private void deleteMessageForMe(Message message) {
         if (message == null || message.id == null || conversationId == null || uid == null) {
             return;
         }
@@ -222,6 +227,33 @@ public class ChatFragment extends Fragment {
                 Toast.makeText(requireContext(), error != null ? error : getString(R.string.auth_error_generic), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void confirmDeleteMessageForEveryone(Message message) {
+        if (message == null || message.id == null || conversationId == null || uid == null) {
+            return;
+        }
+        if (message.senderUid == null || !message.senderUid.equals(uid)) {
+            Toast.makeText(requireContext(), R.string.message_edit_not_allowed, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.delete_message_everyone_title)
+                .setMessage(R.string.delete_message_everyone_message)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, (dialog, which) ->
+                        repository.deleteMessageForEveryone(conversationId, message, uid, (success, error) -> {
+                            if (!isAdded()) {
+                                return;
+                            }
+                            if (!success) {
+                                Toast.makeText(requireContext(),
+                                        error != null ? error : getString(R.string.auth_error_generic),
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }))
+                .show();
     }
 
     @Override

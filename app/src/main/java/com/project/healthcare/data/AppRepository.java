@@ -1294,6 +1294,38 @@ public class AppRepository {
                 });
     }
 
+    public void deleteMessageForEveryone(String conversationId, Message message, String requesterUid, @Nullable CompletionCallback callback) {
+        if (conversationId == null || message == null || message.id == null || requesterUid == null) {
+            if (callback != null) {
+                callback.onComplete(false, "Invalid message reference");
+            }
+            return;
+        }
+        if (message.senderUid == null || !message.senderUid.equals(requesterUid)) {
+            if (callback != null) {
+                callback.onComplete(false, "You can only delete your own messages.");
+            }
+            return;
+        }
+
+        DatabaseReference messageRef = conversationsRef.child(conversationId)
+                .child(NODE_CONVERSATION_MESSAGES)
+                .child(message.id);
+
+        messageRef.removeValue()
+                .addOnSuccessListener(unused -> {
+                    refreshConversationPreviewsForAll(conversationId);
+                    if (callback != null) {
+                        callback.onComplete(true, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) {
+                        callback.onComplete(false, e.getMessage());
+                    }
+                });
+    }
+
     public void archiveConversationForUser(String conversationId, String viewerUid, @Nullable CompletionCallback callback) {
         setConversationArchivedForUser(conversationId, viewerUid, true, callback);
     }
@@ -1385,7 +1417,7 @@ public class AppRepository {
                             if (message.id == null || message.id.isEmpty()) {
                                 message.id = child.getKey();
                             }
-                            if (message.deletedFor != null && Boolean.TRUE.equals(message.deletedFor.get(viewerUid))) {
+                            if (isMessageDeletedForViewer(message, viewerUid)) {
                                 continue;
                             }
                             if (latestVisible == null || message.timestamp >= latestVisible.timestamp) {
@@ -1420,6 +1452,100 @@ public class AppRepository {
             public void onCancelled(@NonNull DatabaseError error) {
             }
         });
+    }
+
+    private void refreshConversationPreviewsForAll(String conversationId) {
+        if (conversationId == null) {
+            return;
+        }
+
+        conversationsRef.child(conversationId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Conversation conversation = snapshot.getValue(Conversation.class);
+                if (conversation == null) {
+                    return;
+                }
+
+                String patientUid = conversation.patientUid;
+                String doctorUid = conversation.doctorUid;
+                if ((patientUid == null || patientUid.isEmpty()) && (doctorUid == null || doctorUid.isEmpty())) {
+                    return;
+                }
+
+                DatabaseReference messagesRef = conversationsRef.child(conversationId).child(NODE_CONVERSATION_MESSAGES);
+                messagesRef.orderByChild("timestamp").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot messagesSnapshot) {
+                        Message latestForPatient = null;
+                        Message latestForDoctor = null;
+                        Message latestOverall = null;
+
+                        for (DataSnapshot child : messagesSnapshot.getChildren()) {
+                            Message message = child.getValue(Message.class);
+                            if (message == null) {
+                                continue;
+                            }
+                            if (message.id == null || message.id.isEmpty()) {
+                                message.id = child.getKey();
+                            }
+
+                            if (latestOverall == null || message.timestamp >= latestOverall.timestamp) {
+                                latestOverall = message;
+                            }
+
+                            if (patientUid != null && !isMessageDeletedForViewer(message, patientUid)) {
+                                if (latestForPatient == null || message.timestamp >= latestForPatient.timestamp) {
+                                    latestForPatient = message;
+                                }
+                            }
+
+                            if (doctorUid != null && !isMessageDeletedForViewer(message, doctorUid)) {
+                                if (latestForDoctor == null || message.timestamp >= latestForDoctor.timestamp) {
+                                    latestForDoctor = message;
+                                }
+                            }
+                        }
+
+                        Map<String, Object> update = new HashMap<>();
+                        if (latestOverall != null) {
+                            update.put("lastMessage", latestOverall.text != null ? latestOverall.text : "");
+                            update.put("timeLabel", formatTimeLabel(latestOverall.timestamp));
+                        } else {
+                            update.put("lastMessage", "");
+                            update.put("timeLabel", "");
+                        }
+
+                        if (patientUid != null) {
+                            update.put("lastMessagePatient", latestForPatient != null && latestForPatient.text != null ? latestForPatient.text : "");
+                            update.put("timeLabelPatient", latestForPatient != null ? formatTimeLabel(latestForPatient.timestamp) : "");
+                        }
+
+                        if (doctorUid != null) {
+                            update.put("lastMessageDoctor", latestForDoctor != null && latestForDoctor.text != null ? latestForDoctor.text : "");
+                            update.put("timeLabelDoctor", latestForDoctor != null ? formatTimeLabel(latestForDoctor.timestamp) : "");
+                        }
+
+                        conversationsRef.child(conversationId).updateChildren(update);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                    }
+                });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+    }
+
+    private boolean isMessageDeletedForViewer(@Nullable Message message, @Nullable String viewerUid) {
+        if (message == null || viewerUid == null || message.deletedFor == null) {
+            return false;
+        }
+        return Boolean.TRUE.equals(message.deletedFor.get(viewerUid));
     }
 
     public void markConversationRead(String conversationId, String viewerUid, @Nullable CompletionCallback callback) {

@@ -27,7 +27,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     public interface MessageActionListener {
         void onEdit(Message message);
 
-        void onDelete(Message message);
+        void onDeleteForMe(Message message);
+
+        void onDeleteForEveryone(Message message);
     }
 
     private final List<Message> items = new ArrayList<>();
@@ -83,6 +85,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     private void showMessageMenu(View anchor, Message message, boolean isOutgoing) {
         PopupMenu menu = new PopupMenu(anchor.getContext(), anchor);
         menu.getMenuInflater().inflate(R.menu.menu_message_actions, menu.getMenu());
+        if (!isOutgoing) {
+            menu.getMenu().findItem(R.id.action_edit_message).setVisible(false);
+            menu.getMenu().findItem(R.id.action_delete_message_everyone).setVisible(false);
+        }
         menu.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.action_edit_message) {
@@ -95,9 +101,15 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 }
                 return true;
             }
-            if (itemId == R.id.action_delete_message) {
+            if (itemId == R.id.action_delete_message_me) {
                 if (actionListener != null) {
-                    actionListener.onDelete(message);
+                    actionListener.onDeleteForMe(message);
+                }
+                return true;
+            }
+            if (itemId == R.id.action_delete_message_everyone) {
+                if (actionListener != null) {
+                    actionListener.onDeleteForEveryone(message);
                 }
                 return true;
             }

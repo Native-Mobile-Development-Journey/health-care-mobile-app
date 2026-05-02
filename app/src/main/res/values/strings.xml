@@ -73,6 +73,10 @@
     <string name="schedule_conflict_error">You already have an appointment at this date and time.</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="delete_for_me">Delete for me</string>
+    <string name="delete_for_everyone">Delete for everyone</string>
+    <string name="delete_message_everyone_title">Delete message for everyone?</string>
+    <string name="delete_message_everyone_message">This will remove the message for both of you.</string>
     <string name="delete_chat">Delete chat</string>
     <string name="delete_chat_title">Delete chat?</string>
     <string name="delete_chat_message">This chat will be removed only for you. New messages will make it appear again.</string>
@@ -92,6 +96,7 @@
     <string name="edit">Edit</string>
     <string name="edit_message_title">Edit message</string>
     <string name="message_edit_not_allowed">You can only edit your own messages.</string>
+    <string name="message_delete_not_allowed">You can only delete your own messages for everyone.</string>
     <string name="save">Save</string>
     <string name="select_doctor_title">Select doctor</string>
     <string name="select_doctor_empty">No doctors available.</string>
