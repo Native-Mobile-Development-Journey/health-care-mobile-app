@@ -1,25 +1,25 @@
-# 🏥 HealthCare Mobile App
+# HealthCare Mobile App
 
 A full-stack Android healthcare application enabling patients to book doctor appointments, manage their medical schedules, and communicate with doctors through real-time chat. Built with Java, Firebase, and modern Android architecture patterns.
 
 ---
 
-## 📖 Overview
+## Overview
 
 HealthCare Mobile App is a role-based healthcare platform that serves both **patients** and **doctors**. Patients can browse doctors by specialty, view availability, book appointments, and chat with their doctors in real-time. Doctors can manage their schedules, view patient lists, and respond to messages. The app uses Firebase as its backend, providing real-time data synchronization, authentication, and serverless cloud functions for automated appointment management.
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔐 Authentication & Role Management
+### Authentication & Role Management
 
 - **Email/Password Authentication** — Secure sign-up and login via Firebase Auth
 - **Google Sign-In** — One-tap sign-in using Android Credential Manager
 - **Role-Based Access Control** — Distinct interfaces for Patients and Doctors, enforced via Firebase Custom Claims
 - **Seamless Role Routing** — AuthActivity detects user role and routes to the appropriate dashboard
 
-### 👨‍⚕️ Patient Features
+### Patient Features
 
 - **Home Dashboard** — Personalized home screen showing quick-access medical service categories, recommended doctors, and today's appointment schedule
 - **Doctor Discovery** — Browse all available doctors with search and filter by name, specialty, or hospital
@@ -30,7 +30,7 @@ HealthCare Mobile App is a role-based healthcare platform that serves both **pat
 - **Chat List** — View all conversations with unread message counts and last message previews
 - **Patient Profile** — View and manage personal medical profile including name, age, gender, medical history, and blood group
 
-### 👩‍⚕️ Doctor Features
+### Doctor Features
 
 - **Doctor Dashboard** — Overview screen with quick actions for appointments, chat, and patient management
 - **Appointment Management** — View and manage all patient appointments
@@ -39,14 +39,14 @@ HealthCare Mobile App is a role-based healthcare platform that serves both **pat
 - **Real-Time Chat** — Respond to patient messages with real-time delivery
 - **Chat List** — View all patient conversations with unread counts
 
-### ⚙️ Backend / Cloud Functions
+### Backend / Cloud Functions
 
 - **Automatic Appointment Expiration** — Scheduled Cloud Function that automatically marks stale upcoming appointments (older than 7 days) as "Expired" daily
 - **Role Claim Assignment** — Server-side function to set custom auth claims for secure role enforcement
 
 ---
 
-## 🏗️ Architecture & Design Patterns
+## Architecture & Design Patterns
 
 | Pattern                       | Implementation                                                                                                                                     |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -59,7 +59,7 @@ HealthCare Mobile App is a role-based healthcare platform that serves both **pat
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 health-care-mobile-app/
@@ -109,7 +109,7 @@ health-care-mobile-app/
 
 ---
 
-## 🛠️ Technologies & Tools
+## Technologies & Tools
 
 | Category           | Technology                                                  |
 | ------------------ | ----------------------------------------------------------- |
@@ -125,7 +125,7 @@ health-care-mobile-app/
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 ### Android Dependencies
 
@@ -166,7 +166,7 @@ health-care-mobile-app/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -203,7 +203,7 @@ health-care-mobile-app/
 
 ---
 
-## ✅ Best Practices & Code Quality
+## Best Practices & Code Quality
 
 - **Repository Pattern** — Centralized data access through a singleton `AppRepository`, decoupling UI from data sources
 - **Singleton Repository** — Thread-safe lazy initialization for consistent data access across the application
@@ -219,14 +219,20 @@ health-care-mobile-app/
 
 ---
 
-## 📄 License
+## License
 
 This project was developed as an academic project for the Software & Mobile Development course.
 
 ---
 
-## 👤 Author
+## Repository
 
-**Native Mobile Development Journey**
+GitHub: [health-care-mobile-app](https://github.com/Native-Mobile-Development-Journey/health-care-mobile-app)
+
+---
+
+## Author
+
+**Native-Mobile-Development-Journey**
 
 GitHub: [Native-Mobile-Development-Journey](https://github.com/Native-Mobile-Development-Journey)
